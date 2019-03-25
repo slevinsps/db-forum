@@ -18,7 +18,7 @@ func Init(CDB config.DatabaseConfig) (db *DataBase, err error) {
 
 	// for local launch
 	if os.Getenv(CDB.URL) == "" {
-		os.Setenv(CDB.URL, "user=rolepade password=escapade dbname=escabase sslmode=disable")
+		os.Setenv(CDB.URL, "user=db_forum_user password=db_forum_password dbname=db_forum sslmode=disable")
 	}
 
 	var database *sql.DB

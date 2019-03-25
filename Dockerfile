@@ -5,7 +5,7 @@ ENV DEBIAN_FRONTEND 'noninteractive'
 
 RUN echo 'Europe/Moscow' > '/etc/timezone'
 
-RUN apt-get -y update
+RUN apt-get -o Acquire::Check-Valid-Until=false update
 RUN apt install -y gcc git wget
 RUN apt install -y postgresql-$PGSQLVER
 
@@ -17,7 +17,7 @@ ENV GOROOT /usr/local/go
 ENV GOPATH /opt/go
 ENV PATH $GOROOT/bin:$GOPATH/bin:/usr/local/go/bin:$PATH
 
-WORKDIR /escapade
+WORKDIR /db-forum
 COPY . .
 
 EXPOSE 3000
@@ -25,8 +25,8 @@ EXPOSE 3000
 USER postgres
 
 RUN /etc/init.d/postgresql start &&\
-    psql --echo-all --command "CREATE USER rolepade WITH SUPERUSER PASSWORD 'escapade';" &&\
-    createdb -O rolepade escabase &&\
+    psql --echo-all --command "CREATE USER db_forum_user WITH SUPERUSER PASSWORD 'db_forum_password';" &&\
+    createdb -O db_forum_user db_forum &&\
     /etc/init.d/postgresql stop
 
 
@@ -43,7 +43,7 @@ EXPOSE 5432
 
 USER root
 
-CMD service postgresql start && cd internal/services/api && go test -coverprofile test/cover.out && go tool cover -html=test/cover.out -o test/coverage.html
+CMD service postgresql start && cd forum && go run main.go
 
 # docker build -t esc .
 # docker run -p 5000:5000 --name esc -t esc
