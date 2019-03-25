@@ -1,0 +1,11 @@
+{
+	"server": {
+		"host": "http://localhost",
+		"port": "5000"
+	},
+	"dataBase": {
+		"driverName": "postgres",
+		"url": "DATABASE_URL",
+		"maxOpenConns": 20
+	}
+}
