@@ -2,7 +2,6 @@ package api
 
 import (
 	"db_forum/internal/models"
-	"fmt"
 	"net/http"
 )
 
@@ -63,7 +62,6 @@ func (h *Handler) ThreadVote(rw http.ResponseWriter, r *http.Request) {
 		printResult(err, http.StatusNotFound, place)
 		return
 	}
-	fmt.Println("QAAAAAAAAAA2 ", thread.Votes)
 	rw.WriteHeader(http.StatusOK)
 	sendJSON(rw, thread, place)
 

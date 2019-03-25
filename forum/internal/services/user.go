@@ -2,7 +2,6 @@ package api
 
 import (
 	"db_forum/internal/models"
-	"fmt"
 	"net/http"
 )
 
@@ -149,7 +148,6 @@ func (h *Handler) UserUpdateProfile(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(user)
 	if checkUnique {
 		rw.WriteHeader(http.StatusOK)
 		sendJSON(rw, user, place)

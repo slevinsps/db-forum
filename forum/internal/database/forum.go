@@ -118,7 +118,6 @@ func (db *DataBase) CreateForum(forum models.Forum) (forumQuery models.Forum, ch
 		return
 	}
 
-	//fmt.Println(user)
 	sqlInsert := `
 	INSERT INTO Forum(slug, title, "user") VALUES
     ($1, $2, $3);
@@ -145,7 +144,6 @@ func (db *DataBase) CountForum() (count int, err error) {
 	tx, err = db.Db.Begin()
 	defer tx.Rollback()
 
-	//fmt.Println(user)
 	sqlInsert := `
 		SELECT COUNT(*) FROM Forum
 		`

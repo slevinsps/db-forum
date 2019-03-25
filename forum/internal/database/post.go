@@ -17,7 +17,6 @@ func (db *DataBase) GetPostById(id int) (post models.Post, checkFindPost bool, e
 		"SELECT p.author, p.created, p.forum, p.is_edited, p.id, p.message, p.parent, p.thread " +
 			"FROM Post as p where p.id = $1;"
 
-	fmt.Println(id)
 	row := tx.QueryRow(sqlQuery, id)
 
 	err = row.Scan(&post.Author, &post.Created, &post.Forum, &post.IsEdited, &post.Id, &post.Message, &post.Parent, &post.Thread)
@@ -175,9 +174,6 @@ func (db *DataBase) GetPostsByThread(thread models.Thread, limitStr string, sinc
 			sqlQuery += "limit " + limitStr + ";"
 		}
 	}
-
-	fmt.Println(sqlQuery)
-
 	rows, erro := tx.Query(sqlQuery, thread.Id)
 	if erro != nil {
 		err = erro
@@ -213,7 +209,6 @@ func (db *DataBase) UpdatePost(message string, isEdit bool, id int) (post models
 	tx, err = db.Db.Begin()
 	defer tx.Rollback()
 	var sqlQuery string
-	//fmt.Println(user)
 	if isEdit {
 		sqlQuery = `
 		UPDATE Post SET message = $1, is_edited = true where id = $2 RETURNING author, created, forum, id, is_edited, message, parent, thread;
@@ -244,7 +239,6 @@ func (db *DataBase) CountPost() (count int, err error) {
 	tx, err = db.Db.Begin()
 	defer tx.Rollback()
 
-	//fmt.Println(user)
 	sqlInsert := `
 		SELECT COUNT(*) FROM Post
 		`

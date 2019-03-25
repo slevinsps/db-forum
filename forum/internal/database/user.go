@@ -144,7 +144,6 @@ func (db *DataBase) UpdateUser(user models.User) (checkUnique bool, err error) {
 		return
 	}
 
-	//fmt.Println(user)
 	sqlInsert := `
 		UPDATE Users SET about = $1, email = $2, fullname = $3, nickname = $4 WHERE lower(nickname) like lower($5)
 		`

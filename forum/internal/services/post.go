@@ -148,7 +148,6 @@ func (h *Handler) PostDetails(rw http.ResponseWriter, r *http.Request) {
 	)
 	//r.ParseForm()
 	related := strings.Split(r.FormValue("related"), ",")
-	fmt.Println("QQ ", related)
 	if idStr, err = h.getId(r); err != nil {
 		rw.WriteHeader(http.StatusBadRequest)
 		printResult(err, http.StatusBadRequest, place)

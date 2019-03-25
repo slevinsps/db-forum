@@ -66,7 +66,7 @@ func (db *DataBase) ServiceClear() (err error) {
 }
 
 func (db *DataBase) CreateTables() error {
-	query, err := ioutil.ReadFile("init.psql")
+	query, err := ioutil.ReadFile("init.pgsql")
 	if err != nil {
 		panic(err)
 	}

@@ -39,8 +39,6 @@ func (db DataBase) isThreadUnique(thread models.Thread, checkUnique *bool) (thre
 		}
 	}
 
-	fmt.Println("!!!!!!! ", thread)
-
 	if err != nil {
 		if err == sql.ErrNoRows {
 			*checkUnique = true
@@ -70,7 +68,6 @@ func (db *DataBase) CreateThread(thread models.Thread, slug string) (threadQuery
 		return
 	}
 
-	fmt.Println(checkUnique)
 	if !checkUnique {
 		fmt.Println("CreateThread ", thread)
 		return
@@ -160,8 +157,6 @@ func (db *DataBase) GetThreadsByForum(title string, limitStr string, sinceStr st
 		sqlQuery += "limit " + limitStr + ";"
 	}
 
-	fmt.Println(sqlQuery)
-
 	rows, erro := tx.Query(sqlQuery, title)
 	if erro != nil {
 		err = erro
@@ -177,8 +172,6 @@ func (db *DataBase) GetThreadsByForum(title string, limitStr string, sinceStr st
 			fmt.Println("database/GetThreadsByForum wrong row catched")
 			break
 		}
-		fmt.Println(thread)
-
 		threads = append(threads, thread)
 	}
 
@@ -198,7 +191,6 @@ func (db *DataBase) GetThreadById(slugOrId string) (thread models.Thread, checkF
 	tx, err = db.Db.Begin()
 	defer tx.Rollback()
 	checkFindThread = true
-	fmt.Println(slugOrId)
 	slugOrIDInt, errAtoi := strconv.Atoi(slugOrId)
 	if errAtoi != nil {
 
@@ -208,7 +200,6 @@ func (db *DataBase) GetThreadById(slugOrId string) (thread models.Thread, checkF
 		row := tx.QueryRow(sqlQuery, slugOrId)
 		err = row.Scan(&thread.Author, &thread.Created, &thread.Forum, &thread.Id, &thread.Message, &thread.Slug, &thread.Title, &thread.Votes)
 	} else {
-		fmt.Println(slugOrIDInt)
 		sqlQuery :=
 			"SELECT t.author, t.created, t.forum, t.id, t.message, t.slug, t.title, t.votes " +
 				"FROM Thread as t where t.id = $1;"

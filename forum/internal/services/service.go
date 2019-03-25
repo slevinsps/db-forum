@@ -2,7 +2,6 @@ package api
 
 import (
 	"db_forum/internal/models"
-	"fmt"
 	"net/http"
 )
 
@@ -40,7 +39,6 @@ func (h *Handler) ServiceStatus(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	rw.Header().Set("Content-Type", "application/json")
-	fmt.Println(models.Service{Forum: countForum, Post: countPost, User: countUser, Thread: countThread})
 	rw.WriteHeader(http.StatusOK)
 	sendJSON(rw, models.Service{Forum: countForum, Post: countPost, User: countUser, Thread: countThread}, place)
 	printResult(err, http.StatusCreated, place)

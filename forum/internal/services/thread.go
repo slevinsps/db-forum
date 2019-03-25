@@ -2,7 +2,6 @@ package api
 
 import (
 	"db_forum/internal/models"
-	"fmt"
 	"net/http"
 )
 
@@ -31,7 +30,6 @@ func (h *Handler) ThreadCreate(rw http.ResponseWriter, r *http.Request) {
 		printResult(err, http.StatusBadRequest, place)
 		return
 	}
-	fmt.Println("QQQQQQ ", thread.Author)
 
 	if user, checkFindUser, err = h.DB.GetUserByNickname(thread.Author); err != nil {
 		rw.WriteHeader(http.StatusNotFound)
@@ -39,7 +37,6 @@ func (h *Handler) ThreadCreate(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("RRRRRR ", user.Nickname)
 	thread.Author = user.Nickname
 
 	rw.Header().Set("Content-Type", "application/json")
@@ -65,7 +62,6 @@ func (h *Handler) ThreadCreate(rw http.ResponseWriter, r *http.Request) {
 	}
 	thread.Forum = forum.Slug
 
-	fmt.Println("SSSS  ", thread)
 	if thread, checkUnique, err = h.DB.CreateThread(thread, slug); err != nil {
 		rw.WriteHeader(http.StatusNotFound)
 		printResult(err, http.StatusNotFound, place)
