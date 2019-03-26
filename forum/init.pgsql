@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS Users (
 CREATE TABLE IF NOT EXISTS Forum (
   id      bigserial PRIMARY KEY,
   posts   bigint       default 0,
-  slug    varchar(100) NOT NULL unique,
+  slug    CITEXT NOT NULL unique,
   threads int          default 0,
   title   varchar(100)  NOT NULL,
   "user" CITEXT NOT NULL REFERENCES Users(nickname)    
@@ -26,9 +26,9 @@ CREATE TABLE IF NOT EXISTS Thread (
   id        bigserial           PRIMARY KEY,
   author    CITEXT              NOT NULL   REFERENCES Users(nickname),
   created   TIMESTAMPTZ,
-  forum     varchar(100)        NOT NULL,
+  forum     CITEXT        NOT NULL REFERENCES Forum(slug),
   message   text                NOT NULL,
-  slug      varchar(100)        DEFAULT NULL,
+  slug      CITEXT        DEFAULT NULL,
   title     varchar(100)        NOT NULL,
   votes     int  DEFAULT 0      NOT NULL 
 );
@@ -38,17 +38,18 @@ CREATE TABLE IF NOT EXISTS Post (
   id        bigserial                   PRIMARY KEY,
   author    CITEXT                      NOT NULL REFERENCES Users(nickname),
   created   TIMESTAMPTZ,
-  forum     varchar(100)                NOT NULL,
+  forum     CITEXT               NOT NULL REFERENCES Forum(slug),
   is_edited BOOLEAN DEFAULT FALSE       NOT NULL,
   message   text                        NOT NULL,
   parent    BIGINT DEFAULT 0            NOT NULL,
-  thread    bigserial                   NOT NULL,
+  thread    bigserial                   NOT NULL  REFERENCES Thread(id),
   branch    BIGINT                      NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS Vote (
-    nickname  CITEXT   NOT NULL REFERENCES Users(nickname)  unique,
-    voice     int       NOT NULL
+  nickname  CITEXT   NOT NULL REFERENCES Users(nickname),
+  threadId  bigserial NOT NULL REFERENCES Thread(id),
+  voice     int       NOT NULL
 );
 
 

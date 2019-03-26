@@ -2,12 +2,14 @@ package api
 
 import (
 	"db_forum/internal/models"
+	"fmt"
 	"net/http"
 )
 
 func (h *Handler) ThreadCreate(rw http.ResponseWriter, r *http.Request) {
 	const place = "ThreadCreate"
 
+	fmt.Println("ThreadCreate---------------------------begin")
 	var (
 		err            error
 		thread         models.Thread
@@ -29,6 +31,8 @@ func (h *Handler) ThreadCreate(rw http.ResponseWriter, r *http.Request) {
 		printResult(err, http.StatusBadRequest, place)
 		return
 	}
+	fmt.Println("thread---------------------------end")
+	fmt.Println("SlUUUG ", thread.Slug, "    ", thread)
 
 	if _, checkFindUser, err = h.DB.GetUserByNickname(thread.Author); err != nil {
 		rw.WriteHeader(http.StatusNotFound)
@@ -59,12 +63,11 @@ func (h *Handler) ThreadCreate(rw http.ResponseWriter, r *http.Request) {
 	}
 	thread.Forum = forum.Slug
 
-	if thread, checkUnique, err = h.DB.CreateThread(thread, slug); err != nil {
+	if thread, checkUnique, err = h.DB.CreateThread(thread); err != nil {
 		rw.WriteHeader(http.StatusNotFound)
 		printResult(err, http.StatusNotFound, place)
 		return
 	}
-	rw.Header().Set("Content-Type", "application/json")
 
 	if checkUnique {
 		rw.WriteHeader(http.StatusCreated)
@@ -74,6 +77,7 @@ func (h *Handler) ThreadCreate(rw http.ResponseWriter, r *http.Request) {
 		sendJSON(rw, thread, place)
 	}
 
+	fmt.Println("ThreadCreate---------------------------end")
 	printResult(err, http.StatusCreated, place)
 	return
 }

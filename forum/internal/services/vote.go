@@ -16,6 +16,7 @@ func (h *Handler) ThreadVote(rw http.ResponseWriter, r *http.Request) {
 		checkFindUser   bool
 		vote            models.Vote
 		thread          models.Thread
+		user            models.User
 	)
 	rw.Header().Set("Content-Type", "application/json")
 
@@ -36,6 +37,7 @@ func (h *Handler) ThreadVote(rw http.ResponseWriter, r *http.Request) {
 		printResult(err, http.StatusNotFound, place)
 		return
 	}
+	vote.ThreadId = thread.Id
 
 	if !checkFindThread {
 		rw.WriteHeader(http.StatusNotFound)
@@ -44,11 +46,12 @@ func (h *Handler) ThreadVote(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, checkFindUser, err = h.DB.GetUserByNickname(vote.Nickname); err != nil {
+	if user, checkFindUser, err = h.DB.GetUserByNickname(vote.Nickname); err != nil {
 		rw.WriteHeader(http.StatusNotFound)
 		printResult(err, http.StatusNotFound, place)
 		return
 	}
+	vote.Nickname = user.Nickname
 
 	if !checkFindUser {
 		rw.WriteHeader(http.StatusNotFound)

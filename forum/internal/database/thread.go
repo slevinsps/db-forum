@@ -7,44 +7,24 @@ import (
 	"strconv"
 )
 
-func (db DataBase) isThreadUnique(thread models.Thread, checkUnique *bool) (threadRes models.Thread, err error) {
+func (db DataBase) isThreadUnique(thread models.Thread) (threadRes models.Thread, checkUnique bool, err error) {
 	var tx *sql.Tx
 	tx, err = db.Db.Begin()
 	defer tx.Rollback()
-	*checkUnique = false
+	checkUnique = false
 
-	if thread.Created != "" {
-		if thread.Slug != "" {
-			sqlStatement := "SELECT t.author, t.created, t.forum, t.id, t.message, t.title, t.slug " +
-				"FROM Thread as t where  lower(t.slug) like lower($1)"
-			row := tx.QueryRow(sqlStatement, thread.Slug)
-			err = row.Scan(&threadRes.Author, &threadRes.Created, &threadRes.Forum, &threadRes.Id, &threadRes.Message, &threadRes.Title, &threadRes.Slug)
-		} else {
-			sqlStatement := "SELECT t.author, t.created, t.forum, t.id, t.message, t.title " +
-				"FROM Thread as t where  lower(t.title) like lower($1)"
-			row := tx.QueryRow(sqlStatement, thread.Title)
-			err = row.Scan(&threadRes.Author, &threadRes.Created, &threadRes.Forum, &threadRes.Id, &threadRes.Message, &threadRes.Title)
-		}
-	} else {
-		if thread.Slug != "" {
-			sqlStatement := "SELECT t.author, t.forum, t.id, t.message, t.title, t.slug " +
-				"FROM Thread as t where  lower(t.slug) like lower($1)"
-			row := tx.QueryRow(sqlStatement, thread.Slug)
-			err = row.Scan(&threadRes.Author, &threadRes.Forum, &threadRes.Id, &threadRes.Message, &threadRes.Title, &threadRes.Slug)
-		} else {
-			sqlStatement := "SELECT t.author,  t.forum, t.id, t.message, t.title " +
-				"FROM Thread as t where  lower(t.title) like lower($1)"
-			row := tx.QueryRow(sqlStatement, thread.Title)
-			err = row.Scan(&threadRes.Author, &threadRes.Forum, &threadRes.Id, &threadRes.Message, &threadRes.Title)
-		}
-	}
+	sqlStatement := "SELECT t.author, t.created, t.forum, t.id, t.message, t.title, t.slug " +
+		"FROM Thread as t where  lower(t.slug) like lower($1)"
+	row := tx.QueryRow(sqlStatement, thread.Slug)
+	err = row.Scan(&threadRes.Author, &threadRes.Created, &threadRes.Forum, &threadRes.Id, &threadRes.Message, &threadRes.Title, &threadRes.Slug)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			*checkUnique = true
+			checkUnique = true
 			err = nil
 		}
 		fmt.Println("database/isThreadUnique Query error")
+
 		return
 	}
 
@@ -57,15 +37,17 @@ func (db DataBase) isThreadUnique(thread models.Thread, checkUnique *bool) (thre
 }
 
 // CreateThread
-func (db *DataBase) CreateThread(thread models.Thread, slug string) (threadQuery models.Thread, checkUnique bool, err error) {
+func (db *DataBase) CreateThread(thread models.Thread) (threadQuery models.Thread, checkUnique bool, err error) {
 	var tx *sql.Tx
 	tx, err = db.Db.Begin()
 	defer tx.Rollback()
 
-	checkUnique = false
-	if threadQuery, err = db.isThreadUnique(thread, &checkUnique); err != nil {
-		fmt.Println("database/CreateThread - fail uniqie")
-		return
+	checkUnique = true
+	if thread.Slug != "" {
+		if threadQuery, checkUnique, err = db.isThreadUnique(thread); err != nil {
+			fmt.Println("database/CreateThread - fail uniqie")
+			return
+		}
 	}
 
 	if !checkUnique {
@@ -73,53 +55,24 @@ func (db *DataBase) CreateThread(thread models.Thread, slug string) (threadQuery
 		return
 	}
 
-	//fmt.Println(user)
-	if thread.Created != "" {
-		if thread.Slug != "" {
-			sqlInsert := `
-			INSERT INTO Thread(author, created, forum, message, title, slug) VALUES
-				($1, $2, $3, $4, $5, $6) RETURNING author, created, forum, id, message, title, slug;
-				`
-			row := tx.QueryRow(sqlInsert, thread.Author, thread.Created, thread.Forum, thread.Message, thread.Title, thread.Slug)
-			err = row.Scan(&threadQuery.Author, &threadQuery.Created, &threadQuery.Forum, &threadQuery.Id, &threadQuery.Message, &threadQuery.Title, &threadQuery.Slug)
-			if err != nil {
-				return
-			}
-		} else {
-			sqlInsert := `
-			INSERT INTO Thread(author, created, forum, message, title) VALUES
-				($1, $2, $3, $4, $5) RETURNING author, created, forum, id, message, title;
-				`
-			row := tx.QueryRow(sqlInsert, thread.Author, thread.Created, thread.Forum, thread.Message, thread.Title)
-			err = row.Scan(&threadQuery.Author, &threadQuery.Created, &threadQuery.Forum, &threadQuery.Id, &threadQuery.Message, &threadQuery.Title)
-			if err != nil {
-				return
-			}
-		}
+	if thread.Created == "" {
+		sqlInsert := `
+		INSERT INTO Thread(author, forum, message, title, slug) VALUES
+			($1, $2, $3, $4, $5) RETURNING author, forum, id, message, title, slug;
+			`
+		row := tx.QueryRow(sqlInsert, thread.Author, thread.Forum, thread.Message, thread.Title, thread.Slug)
+		err = row.Scan(&threadQuery.Author, &threadQuery.Forum, &threadQuery.Id, &threadQuery.Message, &threadQuery.Title, &threadQuery.Slug)
 	} else {
-		if thread.Slug != "" {
-			sqlInsert := `
-			INSERT INTO Thread(author, forum, message, title, slug) VALUES
-				($1, $2, $3, $4, $5) RETURNING author, forum, id, message, title, slug;
-				`
-			row := tx.QueryRow(sqlInsert, thread.Author, thread.Forum, thread.Message, thread.Title, thread.Slug)
-			err = row.Scan(&threadQuery.Author, &threadQuery.Forum, &threadQuery.Id, &threadQuery.Message, &threadQuery.Title, &threadQuery.Slug)
-			if err != nil {
-				return
-			}
-		} else {
-			sqlInsert := `
-			INSERT INTO Thread(author, forum, message, title) VALUES
-				($1, $2, $3, $4) RETURNING author, forum, id, message, title;
-				`
-			row := tx.QueryRow(sqlInsert, thread.Author, thread.Forum, thread.Message, thread.Title)
-			err = row.Scan(&threadQuery.Author, &threadQuery.Forum, &threadQuery.Id, &threadQuery.Message, &threadQuery.Title)
-			if err != nil {
-				return
-			}
-		}
+		sqlInsert := `
+		INSERT INTO Thread(author, created, forum, message, title, slug) VALUES
+			($1, $2, $3, $4, $5, $6) RETURNING author, created, forum, id, message, title, slug;
+			`
+		row := tx.QueryRow(sqlInsert, thread.Author, thread.Created, thread.Forum, thread.Message, thread.Title, thread.Slug)
+		err = row.Scan(&threadQuery.Author, &threadQuery.Created, &threadQuery.Forum, &threadQuery.Id, &threadQuery.Message, &threadQuery.Title, &threadQuery.Slug)
 	}
-
+	if err != nil {
+		return
+	}
 	_ = db.UpdateFieldsForum(thread.Forum, 1, "threads")
 	if err != nil {
 		return
