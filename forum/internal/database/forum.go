@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"db_forum/internal/models"
 	"fmt"
-	"strings"
 )
 
 // GetForumBySlug
@@ -90,7 +89,6 @@ func (db DataBase) isForumUnique(slug string, checkUnique *bool) (forum models.F
 		return
 	}
 
-	forum.User = strings.Replace(forum.User, "\\_", "_", -1)
 	err = tx.Commit()
 	if err != nil {
 		return
@@ -105,7 +103,7 @@ func (db *DataBase) CreateForum(forum models.Forum) (forumQuery models.Forum, ch
 	tx, err = db.Db.Begin()
 	defer tx.Rollback()
 
-	forum.User = strings.Replace(forum.User, "_", "\\_", -1)
+	//forum.User = strings.Replace(forum.User, "_", "\\_", -1)
 
 	checkUnique = false
 	if forumQuery, err = db.isForumUnique(forum.Slug, &checkUnique); err != nil {
@@ -130,7 +128,7 @@ func (db *DataBase) CreateForum(forum models.Forum) (forumQuery models.Forum, ch
 	if err != nil {
 		return
 	}
-	forum.User = strings.Replace(forum.User, "\\_", "_", -1)
+	//forum.User = strings.Replace(forum.User, "\\_", "_", -1)
 	forumQuery = forum
 
 	fmt.Println("database/CreateUser +")

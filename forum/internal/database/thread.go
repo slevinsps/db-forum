@@ -64,7 +64,7 @@ func (db *DataBase) CreateThread(thread models.Thread, slug string) (threadQuery
 
 	checkUnique = false
 	if threadQuery, err = db.isThreadUnique(thread, &checkUnique); err != nil {
-		fmt.Println("database/CreateUser - fail uniqie")
+		fmt.Println("database/CreateThread - fail uniqie")
 		return
 	}
 

@@ -14,7 +14,6 @@ func (h *Handler) ThreadCreate(rw http.ResponseWriter, r *http.Request) {
 		checkUnique    bool
 		checkFindUser  bool
 		checkFindForum bool
-		user           models.User
 		slug           string
 		forum          models.Forum
 	)
@@ -31,13 +30,11 @@ func (h *Handler) ThreadCreate(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user, checkFindUser, err = h.DB.GetUserByNickname(thread.Author); err != nil {
+	if _, checkFindUser, err = h.DB.GetUserByNickname(thread.Author); err != nil {
 		rw.WriteHeader(http.StatusNotFound)
 		printResult(err, http.StatusNotFound, place)
 		return
 	}
-
-	thread.Author = user.Nickname
 
 	rw.Header().Set("Content-Type", "application/json")
 
