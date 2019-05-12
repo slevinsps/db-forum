@@ -4,6 +4,7 @@ import (
 	"db_forum/internal/models"
 	"fmt"
 	"net/http"
+	"sync"
 )
 
 func (h *Handler) ThreadCreate(rw http.ResponseWriter, r *http.Request) {
@@ -11,15 +12,14 @@ func (h *Handler) ThreadCreate(rw http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("ThreadCreate---------------------------begin")
 	var (
-		err            error
-		thread         models.Thread
-		checkUnique    bool
-		checkFindUser  bool
-		checkFindForum bool
-		slug           string
-		forum          models.Forum
+		err         error
+		thread      models.Thread
+		checkUnique bool
+		slug        string
+		forum       models.Forum
 	)
 
+	wg := &sync.WaitGroup{}
 	if slug, err = h.getSlug(r); err != nil {
 		rw.WriteHeader(http.StatusBadRequest)
 		printResult(err, http.StatusBadRequest, place)
@@ -32,37 +32,50 @@ func (h *Handler) ThreadCreate(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Println("thread---------------------------end")
-	fmt.Println("SlUUUG ", thread.Slug, "    ", thread)
 
 	rw.Header().Set("Content-Type", "application/json")
-	
-	if _, checkFindUser, err = h.DB.GetUserByNickname(thread.Author); err != nil {
+
+	forumChan := make(chan models.Forum, 1)
+	forumChanErr := make(chan int, 1)
+	userChan := make(chan models.User, 1)
+	userChanErr := make(chan int, 1)
+	defer close(forumChan)
+	defer close(forumChanErr)
+	defer close(userChan)
+	defer close(userChanErr)
+
+	wg.Add(2)
+	go getForumBySlug(wg, slug, h, forumChan, forumChanErr)
+	go getUserByNickname(wg, thread.Author, h, userChan, userChanErr)
+
+	wg.Wait()
+	errUser := <-userChanErr
+	errForum := <-forumChanErr
+
+	if errUser == -1 || errForum == -1 {
 		rw.WriteHeader(http.StatusNotFound)
 		printResult(err, http.StatusNotFound, place)
 		return
 	}
 
-	
-
-	if !checkFindUser {
+	if errUser == -2 {
 		rw.WriteHeader(http.StatusNotFound)
 		message := models.Message{Message: "Can't find user by nickname: " + thread.Author}
 		sendJSON(rw, message, place)
 		return
+	} else {
+		<-userChan
 	}
 
-	if forum, checkFindForum, err = h.DB.GetForumBySlug(slug); err != nil {
-		rw.WriteHeader(http.StatusNotFound)
-		printResult(err, http.StatusNotFound, place)
-		return
-	}
-
-	if !checkFindForum {
+	if errForum == -2 {
 		rw.WriteHeader(http.StatusNotFound)
 		message := models.Message{Message: "Can't find forum by slag: " + slug}
 		sendJSON(rw, message, place)
 		return
+	} else {
+		forum = <-forumChan
 	}
+
 	thread.Forum = forum.Slug
 
 	if thread, checkUnique, err = h.DB.CreateThread(thread); err != nil {
@@ -82,6 +95,47 @@ func (h *Handler) ThreadCreate(rw http.ResponseWriter, r *http.Request) {
 	fmt.Println("ThreadCreate---------------------------end")
 	printResult(err, http.StatusCreated, place)
 	return
+}
+
+func getForumBySlug(wg *sync.WaitGroup, slug string, h *Handler, out chan models.Forum, outErr chan int) {
+	defer wg.Done()
+	var (
+		err            error
+		forum          models.Forum
+		checkFindForum bool
+	)
+
+	if forum, checkFindForum, err = h.DB.GetForumBySlug(slug); err != nil {
+		outErr <- -1
+		return
+	}
+	if checkFindForum {
+		out <- forum
+		outErr <- 0
+	} else {
+		outErr <- -2
+	}
+}
+
+func getUserByNickname(wg *sync.WaitGroup, nickname string, h *Handler, out chan models.User, outErr chan int) {
+	defer wg.Done()
+	var (
+		err           error
+		user          models.User
+		checkFindUser bool
+	)
+
+	if user, checkFindUser, err = h.DB.GetUserByNickname(nickname); err != nil {
+		outErr <- -1
+		return
+	}
+
+	if checkFindUser {
+		out <- user
+		outErr <- 0
+	} else {
+		outErr <- -2
+	}
 }
 
 func (h *Handler) ForumThreads(rw http.ResponseWriter, r *http.Request) {

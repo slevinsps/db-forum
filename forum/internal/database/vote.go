@@ -82,14 +82,16 @@ func (db *DataBase) InsertOrUpdateVoteUser(vote models.Vote, thread *models.Thre
 	if err != nil {
 		return
 	}
-	err = <-outErr
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+
 	thread.Votes = thread.Votes - oldVoice + vote.Voice
 	err = tx.Commit()
 	if err != nil {
+		return
+	}
+
+	err = <-outErr
+	if err != nil {
+		fmt.Println(err)
 		return
 	}
 
