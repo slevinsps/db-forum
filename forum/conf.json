@@ -6,6 +6,6 @@
 	"dataBase": {
 		"driverName": "postgres",
 		"url": "DATABASE_URL",
-		"maxOpenConns": 20
+		"maxOpenConns": 100
 	}
 }

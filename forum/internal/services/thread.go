@@ -34,13 +34,15 @@ func (h *Handler) ThreadCreate(rw http.ResponseWriter, r *http.Request) {
 	fmt.Println("thread---------------------------end")
 	fmt.Println("SlUUUG ", thread.Slug, "    ", thread)
 
+	rw.Header().Set("Content-Type", "application/json")
+	
 	if _, checkFindUser, err = h.DB.GetUserByNickname(thread.Author); err != nil {
 		rw.WriteHeader(http.StatusNotFound)
 		printResult(err, http.StatusNotFound, place)
 		return
 	}
 
-	rw.Header().Set("Content-Type", "application/json")
+	
 
 	if !checkFindUser {
 		rw.WriteHeader(http.StatusNotFound)
