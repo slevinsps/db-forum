@@ -1,16 +1,16 @@
 package api
 
 import (
+	"db_forum/internal/utils"
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
 func printResult(catched error, number int, place string) {
 	if catched != nil {
-		fmt.Println("api/"+place+" failed(code:", number, "). Error message:"+catched.Error())
+		utils.PrintDebug("api/"+place+" failed(code:", number, "). Error message:"+catched.Error())
 	} else {
-		fmt.Println("api/"+place+" success(code:", number, ")")
+		utils.PrintDebug("api/"+place+" success(code:", number, ")")
 	}
 }
 

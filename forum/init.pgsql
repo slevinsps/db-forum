@@ -1,5 +1,5 @@
 CREATE EXTENSION IF NOT EXISTS CITEXT;
-
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 DROP TABLE IF EXISTS Post cascade;
 DROP TABLE IF EXISTS Users cascade;
 DROP TABLE IF EXISTS Forum cascade;
@@ -10,37 +10,29 @@ DROP INDEX IF EXISTS idx_forum;
 DROP INDEX IF EXISTS idx_thread;
 DROP INDEX IF EXISTS idx_post;
 DROP INDEX IF EXISTS idx_vote;
+DROP INDEX IF EXISTS index_users_on_nickname;
+
 
 CREATE TABLE IF NOT EXISTS Users (
   about    text,
-  email    varchar(100) NOT NULL,
+  email    CITEXT NOT NULL,
   fullname varchar(100) NOT NULL,
-  nickname CITEXT NOT NULL PRIMARY KEY COLLATE "C"  
-);
-
-
-CREATE INDEX IF NOT EXISTS idx_users ON Users 
-(
-  nickname
+  nickname CITEXT  NOT NULL PRIMARY KEY  COLLATE "C"
 );
 
 CREATE TABLE IF NOT EXISTS Forum (
   id      bigserial     PRIMARY KEY,
   posts   bigint        default 0,
-  slug    CITEXT        NOT NULL unique,
+  slug    CITEXT        NOT NULL UNIQUE,
   threads bigint           default 0,
   title   varchar(100)  NOT NULL,
-  "user" CITEXT         NOT NULL REFERENCES Users(nickname) ON DELETE CASCADE   
+  "user"  CITEXT        NOT NULL REFERENCES Users(nickname) ON DELETE CASCADE   
 );
 
-CREATE INDEX IF NOT EXISTS idx_forum ON Forum 
-(
-  slug
-);
 
 CREATE TABLE IF NOT EXISTS Thread (
   id        bigserial           PRIMARY KEY,
-  author    CITEXT              NOT NULL   REFERENCES Users(nickname) ON DELETE CASCADE,
+  author    CITEXT       NOT NULL   REFERENCES Users(nickname) ON DELETE CASCADE,
   created   TIMESTAMPTZ,
   forum     CITEXT              NOT NULL REFERENCES Forum(slug) ON DELETE CASCADE,
   message   text                NOT NULL,
@@ -49,15 +41,13 @@ CREATE TABLE IF NOT EXISTS Thread (
   votes     int  DEFAULT 0      NOT NULL 
 );
 
-CREATE INDEX IF NOT EXISTS idx_thread ON Thread 
-(
-  slug
-);
+
+CREATE INDEX idx_thread ON Thread  (slug );
 
 CREATE TABLE IF NOT EXISTS Post (
   path      text                        NOT NULL,
   id        bigserial                   PRIMARY KEY,
-  author    CITEXT                      NOT NULL REFERENCES Users(nickname) ON DELETE CASCADE,
+  author    CITEXT                NOT NULL REFERENCES Users(nickname) ON DELETE CASCADE,
   created   TIMESTAMPTZ,
   forum     CITEXT                      NOT NULL REFERENCES Forum(slug),
   is_edited BOOLEAN                     DEFAULT FALSE       NOT NULL,
@@ -76,14 +66,10 @@ CREATE TABLE IF NOT EXISTS Vote (
   nickname  CITEXT   NOT NULL  REFERENCES Users(nickname)  ON DELETE CASCADE,
   threadId  bigserial NOT NULL  REFERENCES Thread(id)  ON DELETE CASCADE,
   voice     int       NOT NULL,
-  UNIQUE (nickname, threadId)
+  voicePrevious int NOT NULL DEFAULT 0,
+  UNIQUE(nickname, threadId)
 );
 
-CREATE INDEX IF NOT EXISTS idx_vote ON Vote 
-(
-  nickname,
-  threadId
-);
 
 CREATE OR REPLACE FUNCTION insertPost()
   RETURNS TRIGGER AS $$
@@ -113,3 +99,45 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER insertPost
 BEFORE INSERT ON Post
 FOR EACH ROW EXECUTE PROCEDURE insertPost();
+
+
+
+CREATE OR REPLACE FUNCTION insertThread()
+  RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE Forum SET threads = threads + 1 where slug = NEW.forum;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER insertThread
+BEFORE INSERT ON Thread
+FOR EACH ROW EXECUTE PROCEDURE insertThread();
+
+
+
+CREATE OR REPLACE FUNCTION updateVote()
+  RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE Thread SET votes = votes - OLD.voice + NEW.voice WHERE id = OLD.ThreadId;
+  NEW.voicePrevious := OLD.voice;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER updateVote
+BEFORE UPDATE ON Vote
+FOR EACH ROW EXECUTE PROCEDURE updateVote();
+
+
+CREATE OR REPLACE FUNCTION insertVote()
+  RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE Thread SET votes = votes + NEW.voice WHERE id = NEW.ThreadId;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER insertVote
+AFTER INSERT ON Vote
+FOR EACH ROW EXECUTE PROCEDURE insertVote();

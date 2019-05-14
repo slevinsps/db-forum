@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 	"db_forum/internal/models"
-	"fmt"
+	"db_forum/internal/utils"
 )
 
 // GetForumBySlug
@@ -15,7 +15,7 @@ func (db *DataBase) GetForumBySlug(slug string) (forum models.Forum, checkFindFo
 
 	sqlQuery :=
 		"SELECT f.posts, f.slug, f.threads, f.title, f.user FROM Forum as f " +
-			"where lower(f.slug) like lower($1);"
+			"where f.slug = $1;"
 
 	row := tx.QueryRow(sqlQuery, slug)
 	err = row.Scan(&forum.Posts, &forum.Slug, &forum.Threads, &forum.Title, &forum.User)
@@ -31,7 +31,7 @@ func (db *DataBase) GetForumBySlug(slug string) (forum models.Forum, checkFindFo
 		return
 	}
 
-	fmt.Println("database/GetForumBySlug +")
+	utils.PrintDebug("database/GetForumBySlug +")
 
 	return
 }
@@ -44,7 +44,7 @@ func (db *DataBase) UpdateFieldsForum(slug string, number int, field string) (er
 
 	if field == "threads" {
 		sqlUpdate := `
-			UPDATE Forum SET threads = threads + $1 where lower(slug) like lower($2);
+			UPDATE Forum SET threads = threads + $1 where slug = $2;
 			`
 		_, err = tx.Exec(sqlUpdate, number, slug)
 		if err != nil {
@@ -52,7 +52,7 @@ func (db *DataBase) UpdateFieldsForum(slug string, number int, field string) (er
 		}
 	} else if field == "posts" {
 		sqlUpdate := `
-			UPDATE Forum SET posts = posts + $1 where lower(slug) like lower($2);
+			UPDATE Forum SET posts = posts + $1 where slug = $2;
 			`
 		_, err = tx.Exec(sqlUpdate, number, slug)
 		if err != nil {
@@ -64,7 +64,7 @@ func (db *DataBase) UpdateFieldsForum(slug string, number int, field string) (er
 	if err != nil {
 		return
 	}
-	fmt.Println("database/UpdateFieldsForum +")
+	utils.PrintDebug("database/UpdateFieldsForum +")
 
 	return
 }
@@ -76,7 +76,7 @@ func (db DataBase) isForumUnique(slug string, checkUnique *bool) (forum models.F
 	defer tx.Rollback()
 	*checkUnique = false
 	sqlStatement := "SELECT f.slug, f.title, f.user " +
-		"FROM Forum as f where  lower(f.slug) like lower($1)"
+		"FROM Forum as f where  f.slug = $1"
 
 	row := tx.QueryRow(sqlStatement, slug)
 	err = row.Scan(&forum.Slug, &forum.Title, &forum.User)
@@ -85,7 +85,7 @@ func (db DataBase) isForumUnique(slug string, checkUnique *bool) (forum models.F
 			*checkUnique = true
 			err = nil
 		}
-		fmt.Println("database/isForumUnique Query error")
+		utils.PrintDebug("database/isForumUnique Query error")
 		return
 	}
 
@@ -107,12 +107,12 @@ func (db *DataBase) CreateForum(forum models.Forum) (forumQuery models.Forum, ch
 
 	checkUnique = false
 	if forumQuery, err = db.isForumUnique(forum.Slug, &checkUnique); err != nil {
-		fmt.Println("database/CreateUser - fail uniqie")
+		utils.PrintDebug("database/CreateUser - fail uniqie")
 		return
 	}
 
 	if !checkUnique {
-		fmt.Println("CreateForum ", forum)
+		utils.PrintDebug("CreateForum ", forum)
 		return
 	}
 
@@ -131,7 +131,7 @@ func (db *DataBase) CreateForum(forum models.Forum) (forumQuery models.Forum, ch
 	//forum.User = strings.Replace(forum.User, "\\_", "_", -1)
 	forumQuery = forum
 
-	fmt.Println("database/CreateUser +")
+	utils.PrintDebug("database/CreateUser +")
 
 	return
 }
@@ -154,7 +154,7 @@ func (db *DataBase) CountForum() (count int, err error) {
 	if err != nil {
 		return
 	}
-	fmt.Println("database/CountForum +")
+	utils.PrintDebug("database/CountForum +")
 
 	return
 }

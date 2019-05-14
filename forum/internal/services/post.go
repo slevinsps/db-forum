@@ -2,7 +2,7 @@ package api
 
 import (
 	"db_forum/internal/models"
-	"fmt"
+	"db_forum/internal/utils"
 	"net/http"
 	"strconv"
 	"strings"
@@ -15,7 +15,6 @@ func (h *Handler) ThreadCreatePost(rw http.ResponseWriter, r *http.Request) {
 	var (
 		err             error
 		posts           []models.Post
-		post            models.Post
 		checkFindThread bool
 		thread          models.Thread
 		slugOrID        string
@@ -55,31 +54,31 @@ func (h *Handler) ThreadCreatePost(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	timeNow := time.Now()
-	for i, value := range posts {
-		if post, check, err = h.DB.CreatePost(value, thread, timeNow); err != nil {
-			rw.WriteHeader(http.StatusNotFound)
-			printResult(err, http.StatusNotFound, place)
-			break
-		}
-		if check == -1 {
-			rw.WriteHeader(http.StatusConflict)
-			message := models.Message{Message: "Parent post was created in another thread"}
-			sendJSON(rw, message, place)
-			break
-		} else if check == -2 {
-			rw.WriteHeader(http.StatusNotFound)
-			message := models.Message{Message: "Can't find post author by nickname: " + value.Author}
-			sendJSON(rw, message, place)
-			break
-		}
-		posts[i] = post
+
+	if posts, check, err = h.DB.CreatePost(posts, thread, timeNow); err != nil {
+		rw.WriteHeader(http.StatusNotFound)
+		message := models.Message{Message: "Can't find post author"}
+		sendJSON(rw, message, place)
+		printResult(err, http.StatusNotFound, place)
+		return
 	}
-	if err == nil && check == 0 {
-		_ = h.DB.UpdateFieldsForum(thread.Forum, len(posts), "posts")
-		rw.WriteHeader(http.StatusCreated)
-		sendJSON(rw, posts, place)
-		printResult(err, http.StatusCreated, place)
+	if check == -1 {
+		rw.WriteHeader(http.StatusConflict)
+		message := models.Message{Message: "Parent post was created in another thread"}
+		sendJSON(rw, message, place)
+		return
+	} else if check == -2 {
+		rw.WriteHeader(http.StatusNotFound)
+		message := models.Message{Message: "Can't find post author"}
+		sendJSON(rw, message, place)
+		return
 	}
+
+	_ = h.DB.UpdateFieldsForum(thread.Forum, len(posts), "posts")
+	rw.WriteHeader(http.StatusCreated)
+	sendJSON(rw, posts, place)
+	printResult(err, http.StatusCreated, place)
+
 	return
 }
 
@@ -155,7 +154,7 @@ func (h *Handler) PostDetails(rw http.ResponseWriter, r *http.Request) {
 	}
 	id, err = strconv.Atoi(idStr)
 	if err != nil {
-		fmt.Println("strconv error in PostDetails")
+		utils.PrintDebug("strconv error in PostDetails")
 		return
 	}
 	rw.Header().Set("Content-Type", "application/json")
@@ -229,7 +228,7 @@ func (h *Handler) PostUpdate(rw http.ResponseWriter, r *http.Request) {
 	}
 	id, err = strconv.Atoi(idStr)
 	if err != nil {
-		fmt.Println("strconv error in PostDetails")
+		utils.PrintDebug("strconv error in PostDetails")
 		return
 	}
 

@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 	"db_forum/internal/models"
-	"fmt"
+	"db_forum/internal/utils"
 )
 
 type DataBase struct {
@@ -16,12 +16,12 @@ func (db DataBase) isNicknameEmailUnique_test(nickname string, email string, use
 	tx, err = db.Db.Begin()
 	defer tx.Rollback()
 	sqlStatement := "SELECT u.about, u.email, u.fullname, u.nickname " +
-		"FROM Users as u where nickname like $1 or lower(email) like lower($2)"
+		"FROM Users as u where nickname = $1 or email = $2"
 
 	rows, erro := tx.Query(sqlStatement, nickname, email)
 	if erro != nil {
 		err = erro
-		fmt.Println("database/isNicknameUnique_test Query error")
+		utils.PrintDebug("database/isNicknameUnique_test Query error")
 		return
 	}
 
@@ -31,7 +31,7 @@ func (db DataBase) isNicknameEmailUnique_test(nickname string, email string, use
 		user := models.User{}
 		if err = rows.Scan(&user.About, &user.Email, &user.Fullname,
 			&user.Nickname); err != nil {
-			fmt.Println("database/isNicknameUnique_test wrong row catched")
+			utils.PrintDebug("database/isNicknameUnique_test wrong row catched")
 			break
 		}
 
@@ -51,12 +51,12 @@ func (db DataBase) isEmailUnique_test(user models.User, users *[]models.User) (e
 	tx, err = db.Db.Begin()
 	defer tx.Rollback()
 	sqlStatement := "SELECT u.about, u.email, u.fullname, u.nickname " +
-		"FROM Users as u where lower(email) like lower($1) and u.nickname not like $2"
+		"FROM Users as u where email = $1 and u.nickname <> $2"
 
 	rows, erro := tx.Query(sqlStatement, user.Email, user.Nickname)
 	if erro != nil {
 		err = erro
-		fmt.Println("database/isEmailUnique_test Query error")
+		utils.PrintDebug("database/isEmailUnique_test Query error")
 		return
 	}
 
@@ -66,7 +66,7 @@ func (db DataBase) isEmailUnique_test(user models.User, users *[]models.User) (e
 		user := models.User{}
 		if err = rows.Scan(&user.About, &user.Email, &user.Fullname,
 			&user.Nickname); err != nil {
-			fmt.Println("database/isEmailUnique_test wrong row catched")
+			utils.PrintDebug("database/isEmailUnique_test wrong row catched")
 			break
 		}
 
@@ -90,16 +90,16 @@ func (db *DataBase) CreateUser(user models.User) (users []models.User, checkUniq
 
 	checkUnique = false
 	if err = db.isNicknameEmailUnique_test(user.Nickname, user.Email, &users); err != nil {
-		fmt.Println("database/CreateUser - fail uniqie")
+		utils.PrintDebug("database/CreateUser - fail uniqie")
 		return
 	}
 
 	if len(users) > 0 {
-		fmt.Println("CreateUser ", users)
+		utils.PrintDebug("CreateUser ", users)
 		return
 	}
 
-	//fmt.Println(user)
+	//utils.PrintDebug(user)
 	sqlInsert := `
 	INSERT INTO Users(about, email, fullname, nickname) VALUES
     ($1, $2, $3, $4);
@@ -114,7 +114,7 @@ func (db *DataBase) CreateUser(user models.User) (users []models.User, checkUniq
 	}
 	users = append(users, user)
 	checkUnique = true
-	fmt.Println("database/CreateUser +")
+	utils.PrintDebug("database/CreateUser +")
 
 	return
 }
@@ -128,17 +128,17 @@ func (db *DataBase) UpdateUser(user models.User) (checkUnique bool, err error) {
 	defer tx.Rollback()
 	checkUnique = false
 	if err = db.isEmailUnique_test(user, &users); err != nil {
-		fmt.Println("database/CreateUser - fail uniqie")
+		utils.PrintDebug("database/CreateUser - fail uniqie")
 		return
 	}
 
 	if len(users) > 0 {
-		fmt.Println("UpdateUser ", users)
+		utils.PrintDebug("UpdateUser ", users)
 		return
 	}
 
 	sqlInsert := `
-		UPDATE Users SET about = $1, email = $2, fullname = $3, nickname = $4 WHERE nickname like $5
+		UPDATE Users SET about = $1, email = $2, fullname = $3, nickname = $4 WHERE nickname = $5
 		`
 	_, err = tx.Exec(sqlInsert, user.About, user.Email, user.Fullname, user.Nickname, user.Nickname)
 	if err != nil {
@@ -149,7 +149,7 @@ func (db *DataBase) UpdateUser(user models.User) (checkUnique bool, err error) {
 		return
 	}
 	checkUnique = true
-	fmt.Println("database/UpdateUser +")
+	utils.PrintDebug("database/UpdateUser +")
 
 	return
 }
@@ -162,7 +162,7 @@ func (db *DataBase) GetUserByNickname(nickname string) (user models.User, checkF
 	defer tx.Rollback()
 
 	sqlQuery := `
-	SELECT u.about, u.email, u.fullname, u.nickname FROM Users as u where u.nickname like $1;
+	SELECT u.about, u.email, u.fullname, u.nickname FROM Users as u where u.nickname = $1;
 	`
 
 	row := tx.QueryRow(sqlQuery, nickname)
@@ -180,7 +180,7 @@ func (db *DataBase) GetUserByNickname(nickname string) (user models.User, checkF
 		return
 	}
 
-	fmt.Println("database/GetUserByNickname +")
+	utils.PrintDebug("database/GetUserByNickname +")
 
 	return
 }
@@ -193,7 +193,7 @@ func (db *DataBase) GetUsersByForum(title string, limitStr string, sinceStr stri
 
 	sqlQuery :=
 		"SELECT distinct u.about, u.email, u.fullname, u.nickname " +
-			"FROM Users as u join Post as p on p.author like u.nickname where lower(p.forum) like lower($1)  "
+			"FROM Users as u join Post as p on p.author = u.nickname where p.forum = $1  "
 
 	if sinceStr != "" {
 		if descStr == "true" {
@@ -204,7 +204,7 @@ func (db *DataBase) GetUsersByForum(title string, limitStr string, sinceStr stri
 	}
 
 	sqlQuery += " union SELECT distinct u.about, u.email, u.fullname, u.nickname " +
-		"FROM Users as u join Thread as t on t.author like u.nickname where lower(t.forum) like lower($1) "
+		"FROM Users as u join Thread as t on t.author = u.nickname where t.forum = $1 "
 
 	if sinceStr != "" {
 		if descStr == "true" {
@@ -222,12 +222,12 @@ func (db *DataBase) GetUsersByForum(title string, limitStr string, sinceStr stri
 		sqlQuery += "limit " + limitStr + ";"
 	}
 
-	fmt.Println(sqlQuery)
+	utils.PrintDebug(sqlQuery)
 
 	rows, erro := tx.Query(sqlQuery, title)
 	if erro != nil {
 		err = erro
-		fmt.Println("database/GetUsersByForum Query error")
+		utils.PrintDebug("database/GetUsersByForum Query error")
 		return
 	}
 
@@ -236,7 +236,7 @@ func (db *DataBase) GetUsersByForum(title string, limitStr string, sinceStr stri
 	for rows.Next() {
 		user := models.User{}
 		if err = rows.Scan(&user.About, &user.Email, &user.Fullname, &user.Nickname); err != nil {
-			fmt.Println("database/GetUsersByForum wrong row catched")
+			utils.PrintDebug("database/GetUsersByForum wrong row catched")
 			break
 		}
 
@@ -248,7 +248,7 @@ func (db *DataBase) GetUsersByForum(title string, limitStr string, sinceStr stri
 		return
 	}
 
-	fmt.Println("database/GetUsersByForum +")
+	utils.PrintDebug("database/GetUsersByForum +")
 
 	return
 }
@@ -259,7 +259,7 @@ func (db *DataBase) CountUser() (count int, err error) {
 	tx, err = db.Db.Begin()
 	defer tx.Rollback()
 
-	//fmt.Println(user)
+	//utils.PrintDebug(user)
 	sqlInsert := `
 		SELECT COUNT(*) FROM Users
 		`
@@ -272,7 +272,7 @@ func (db *DataBase) CountUser() (count int, err error) {
 	if err != nil {
 		return
 	}
-	fmt.Println("database/CountUser +")
+	utils.PrintDebug("database/CountUser +")
 
 	return
 }

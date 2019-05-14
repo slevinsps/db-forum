@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 	"db_forum/internal/models"
-	"fmt"
+	"db_forum/internal/utils"
 	"strconv"
 )
 
@@ -14,7 +14,7 @@ func (db DataBase) isThreadUnique(thread models.Thread) (threadRes models.Thread
 	checkUnique = false
 
 	sqlStatement := "SELECT t.author, t.created, t.forum, t.id, t.message, t.title, t.slug " +
-		"FROM Thread as t where  lower(t.slug) like lower($1)"
+		"FROM Thread as t where  t.slug = $1"
 	row := tx.QueryRow(sqlStatement, thread.Slug)
 	err = row.Scan(&threadRes.Author, &threadRes.Created, &threadRes.Forum, &threadRes.Id, &threadRes.Message, &threadRes.Title, &threadRes.Slug)
 
@@ -23,7 +23,7 @@ func (db DataBase) isThreadUnique(thread models.Thread) (threadRes models.Thread
 			checkUnique = true
 			err = nil
 		}
-		fmt.Println("database/isThreadUnique Query error")
+		utils.PrintDebug("database/isThreadUnique Query error")
 
 		return
 	}
@@ -45,13 +45,13 @@ func (db *DataBase) CreateThread(thread models.Thread) (threadQuery models.Threa
 	checkUnique = true
 	if thread.Slug != "" {
 		if threadQuery, checkUnique, err = db.isThreadUnique(thread); err != nil {
-			fmt.Println("database/CreateThread - fail uniqie")
+			utils.PrintDebug("database/CreateThread - fail uniqie")
 			return
 		}
 	}
 
 	if !checkUnique {
-		fmt.Println("CreateThread ", thread)
+		utils.PrintDebug("CreateThread ", thread)
 		return
 	}
 
@@ -73,15 +73,11 @@ func (db *DataBase) CreateThread(thread models.Thread) (threadQuery models.Threa
 	if err != nil {
 		return
 	}
-	_ = db.UpdateFieldsForum(thread.Forum, 1, "threads")
-	if err != nil {
-		return
-	}
 	err = tx.Commit()
 	if err != nil {
 		return
 	}
-	fmt.Println("database/CreateThread +")
+	utils.PrintDebug("database/CreateThread +")
 
 	return
 }
@@ -94,7 +90,7 @@ func (db *DataBase) GetThreadsByForum(title string, limitStr string, sinceStr st
 
 	sqlQuery :=
 		"SELECT t.author, t.created, t.forum, t.id, t.message, t.slug, t.title " +
-			"FROM Thread as t where lower(t.forum) like lower($1) "
+			"FROM Thread as t where t.forum = $1 "
 	if sinceStr != "" {
 		if descStr == "true" {
 			sqlQuery += "and t.created <= " + "'" + sinceStr + "'"
@@ -113,7 +109,7 @@ func (db *DataBase) GetThreadsByForum(title string, limitStr string, sinceStr st
 	rows, erro := tx.Query(sqlQuery, title)
 	if erro != nil {
 		err = erro
-		fmt.Println("database/GetThreadsByForum Query error")
+		utils.PrintDebug("database/GetThreadsByForum Query error")
 		return
 	}
 
@@ -122,7 +118,7 @@ func (db *DataBase) GetThreadsByForum(title string, limitStr string, sinceStr st
 	for rows.Next() {
 		thread := models.Thread{}
 		if err = rows.Scan(&thread.Author, &thread.Created, &thread.Forum, &thread.Id, &thread.Message, &thread.Slug, &thread.Title); err != nil {
-			fmt.Println("database/GetThreadsByForum wrong row catched")
+			utils.PrintDebug("database/GetThreadsByForum wrong row catched")
 			break
 		}
 		threads = append(threads, thread)
@@ -133,7 +129,7 @@ func (db *DataBase) GetThreadsByForum(title string, limitStr string, sinceStr st
 		return
 	}
 
-	fmt.Println("database/GetThreadsByForum +")
+	utils.PrintDebug("database/GetThreadsByForum +")
 
 	return
 }
@@ -149,7 +145,7 @@ func (db *DataBase) GetThreadById(slugOrId string) (thread models.Thread, checkF
 
 		sqlQuery :=
 			"SELECT t.author, t.created, t.forum, t.id, t.message, t.slug, t.title, t.votes " +
-				"FROM Thread as t where lower(t.slug) like lower($1);"
+				"FROM Thread as t where t.slug = $1;"
 		row := tx.QueryRow(sqlQuery, slugOrId)
 		err = row.Scan(&thread.Author, &thread.Created, &thread.Forum, &thread.Id, &thread.Message, &thread.Slug, &thread.Title, &thread.Votes)
 	} else {
@@ -165,17 +161,17 @@ func (db *DataBase) GetThreadById(slugOrId string) (thread models.Thread, checkF
 			checkFindThread = false
 			err = nil
 		}
-		fmt.Println("database/GetThreadsById Scan error")
+		utils.PrintDebug("database/GetThreadsById Scan error")
 		return
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		fmt.Println("database/GetThreadsById Commit error")
+		utils.PrintDebug("database/GetThreadsById Commit error")
 		return
 	}
 
-	fmt.Println("database/GetThreadsById +")
+	utils.PrintDebug("database/GetThreadsById +")
 
 	return
 }
@@ -187,7 +183,7 @@ func (db *DataBase) UpdateThread(threadNew models.Thread, threadOld models.Threa
 	tx, err = db.Db.Begin()
 	defer tx.Rollback()
 
-	//fmt.Println(user)
+	//utils.PrintDebug(user)
 	sqlInsert := `
 		UPDATE Thread SET message = $1, title = $2 where id = $3 RETURNING author, created, forum, id, message, title, slug;
 		`
@@ -206,7 +202,7 @@ func (db *DataBase) UpdateThread(threadNew models.Thread, threadOld models.Threa
 	if err != nil {
 		return
 	}
-	fmt.Println("database/UpdateThread +")
+	utils.PrintDebug("database/UpdateThread +")
 
 	return
 }
@@ -217,7 +213,7 @@ func (db *DataBase) CountThread() (count int, err error) {
 	tx, err = db.Db.Begin()
 	defer tx.Rollback()
 
-	//fmt.Println(user)
+	//utils.PrintDebug(user)
 	sqlInsert := `
 		SELECT COUNT(*) FROM Thread
 		`
@@ -230,7 +226,7 @@ func (db *DataBase) CountThread() (count int, err error) {
 	if err != nil {
 		return
 	}
-	fmt.Println("database/CountThread +")
+	utils.PrintDebug("database/CountThread +")
 
 	return
 }

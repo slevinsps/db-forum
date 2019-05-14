@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 	"db_forum/internal/models"
-	"fmt"
+	"db_forum/internal/utils"
 	"time"
 )
 
@@ -25,78 +25,73 @@ func (db *DataBase) GetPostById(id int) (post models.Post, checkFindPost bool, e
 			checkFindPost = false
 			err = nil
 		}
-		fmt.Println("database/GetPostById Scan error")
+		utils.PrintDebug("database/GetPostById Scan error")
 		return
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		fmt.Println("database/GetPostById Commit error")
+		utils.PrintDebug("database/GetPostById Commit error")
 		return
 	}
 
-	fmt.Println("database/GetPostById +")
+	utils.PrintDebug("database/GetPostById +")
 
 	return
 }
 
 // CreatePost
-func (db *DataBase) CreatePost(post models.Post, thread models.Thread, timeNow time.Time) (postQuery models.Post, check int, err error) {
+func (db *DataBase) CreatePost(posts []models.Post, thread models.Thread, timeNow time.Time) (postQuery []models.Post, check int, err error) {
 	var tx *sql.Tx
 	tx, err = db.Db.Begin()
+	if err != nil {
+		return
+	}
 	defer tx.Rollback()
-	var checkAuthor bool
 	var checkPost bool
 	var postParent models.Post
+	var postQuerySingle models.Post
 
 	check = 0
-	if post.Parent != 0 {
-		if postParent, checkPost, err = db.GetPostById(post.Parent); err != nil {
-			fmt.Println("database/CreatePost - fail checkParent")
+	if posts[0].Parent != 0 {
+		if postParent, checkPost, err = db.GetPostById(posts[0].Parent); err != nil {
+			utils.PrintDebug("database/CreatePost - fail checkParent")
 			return
 		}
 		if !checkPost {
 			check = -1
-			fmt.Println("CreatePost !checkParent")
+			utils.PrintDebug("CreatePost !checkParent")
 			return
 		}
 
 		if postParent.Thread != thread.Id {
-			fmt.Println("CreatePost !postParent")
+			utils.PrintDebug("CreatePost !postParent")
 			check = -1
 			return
 		}
 	}
 
-	if _, checkAuthor, err = db.GetUserByNickname(post.Author); err != nil {
-		fmt.Println("database/CreatePost - fail checkAuthor")
-		return
-	}
-	if !checkAuthor {
-		fmt.Println("CreatePost !checkAuthor")
-		check = -2
-		return
-	}
-	//fmt.Println(user)
-
-	post.Thread = thread.Id
-	post.Forum = thread.Forum
-
 	sqlInsert := `
-	INSERT INTO Post(author, created, forum, message, parent, thread) VALUES
-		($1, $2, $3, $4, $5, $6) RETURNING author, created, forum, id, message, thread, parent;
+	INSERT INTO Post(author, created, forum, message, parent, thread) VALUES ($1, $2, $3, $4, $5, $6) RETURNING author, created, forum, id, message, thread, parent;
 	`
-	row := tx.QueryRow(sqlInsert, post.Author, timeNow, post.Forum, post.Message, post.Parent, post.Thread)
-	err = row.Scan(&postQuery.Author, &postQuery.Created, &postQuery.Forum, &postQuery.Id, &postQuery.Message, &postQuery.Thread, &postQuery.Parent)
-	if err != nil {
-		return
+	for _, value := range posts {
+		value.Thread = thread.Id
+		value.Forum = thread.Forum
+		row := tx.QueryRow(sqlInsert, value.Author, timeNow, value.Forum, value.Message, value.Parent, value.Thread)
+		err = row.Scan(&postQuerySingle.Author, &postQuerySingle.Created, &postQuerySingle.Forum, &postQuerySingle.Id, &postQuerySingle.Message, &postQuerySingle.Thread, &postQuerySingle.Parent)
+		if err != nil {
+			check = -2
+			return
+		}
+		postQuery = append(postQuery, postQuerySingle)
 	}
 
 	err = tx.Commit()
 	if err != nil {
+		check = -2
 		return
 	}
-	fmt.Println("database/CreatePost +")
+	utils.PrintDebug("database/CreatePost +")
 
 	return
 }
@@ -177,7 +172,7 @@ func (db *DataBase) GetPostsByThread(thread models.Thread, limitStr string, sinc
 	rows, erro := tx.Query(sqlQuery, thread.Id)
 	if erro != nil {
 		err = erro
-		fmt.Println("database/GetPostsByThread Query error")
+		utils.PrintDebug("database/GetPostsByThread Query error")
 		return
 	}
 
@@ -186,7 +181,7 @@ func (db *DataBase) GetPostsByThread(thread models.Thread, limitStr string, sinc
 	for rows.Next() {
 		post := models.Post{}
 		if err = rows.Scan(&post.Author, &post.Created, &post.Forum, &post.Id, &post.Message, &post.Thread, &post.Parent); err != nil {
-			fmt.Println("database/GetPostsByThread wrong row catched")
+			utils.PrintDebug("database/GetPostsByThread wrong row catched")
 			break
 		}
 
@@ -198,7 +193,7 @@ func (db *DataBase) GetPostsByThread(thread models.Thread, limitStr string, sinc
 		return
 	}
 
-	fmt.Println("database/GetPostsByThread +")
+	utils.PrintDebug("database/GetPostsByThread +")
 
 	return
 }
@@ -228,7 +223,7 @@ func (db *DataBase) UpdatePost(message string, isEdit bool, id int) (post models
 	if err != nil {
 		return
 	}
-	fmt.Println("database/UpdateThread +")
+	utils.PrintDebug("database/UpdateThread +")
 
 	return
 }
@@ -251,7 +246,7 @@ func (db *DataBase) CountPost() (count int, err error) {
 	if err != nil {
 		return
 	}
-	fmt.Println("database/CountPost +")
+	utils.PrintDebug("database/CountPost +")
 
 	return
 }

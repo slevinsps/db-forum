@@ -2,7 +2,7 @@ package main
 
 import (
 	api "db_forum/internal/services"
-	"fmt"
+	utils "db_forum/internal/utils"
 	"os"
 
 	"net/http"
@@ -15,7 +15,7 @@ func main() {
 
 	API, conf, err := api.GetHandler(confPath)
 	if err != nil {
-		fmt.Println("Error in configuration file or database" + err.Error())
+		utils.PrintDebug("Error in configuration file or database" + err.Error())
 		return
 	}
 
@@ -43,13 +43,13 @@ func main() {
 	r.HandleFunc("/api/service/status", API.ServiceStatus).Methods("GET")
 	r.HandleFunc("/api/service/clear", API.ServiceClear).Methods("POST")
 
-	fmt.Println("launched, look at us on " + conf.Server.Host + ":" + conf.Server.Port)
+	utils.PrintDebug("launched, look at us on " + conf.Server.Host + ":" + conf.Server.Port)
 
 	if os.Getenv("PORT") == "" {
 		os.Setenv("PORT", conf.Server.Port)
 	}
 
 	if err = http.ListenAndServe(":"+os.Getenv("PORT"), r); err != nil {
-		fmt.Println("Error:" + err.Error())
+		utils.PrintDebug("Error:" + err.Error())
 	}
 }

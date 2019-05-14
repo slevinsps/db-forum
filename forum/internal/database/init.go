@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 	"db_forum/internal/config"
-	"fmt"
+	"db_forum/internal/utils"
 	"io/ioutil"
 	"os"
 
@@ -23,7 +23,7 @@ func Init(CDB config.DatabaseConfig) (db *DataBase, err error) {
 
 	var database *sql.DB
 	if database, err = sql.Open(CDB.DriverName, os.Getenv(CDB.URL)); err != nil {
-		fmt.Println("database/Init cant open:" + err.Error())
+		utils.PrintDebug("database/Init cant open:" + err.Error())
 		return
 	}
 
@@ -33,10 +33,10 @@ func Init(CDB config.DatabaseConfig) (db *DataBase, err error) {
 	db.Db.SetMaxOpenConns(CDB.MaxOpenConns)
 
 	if err = db.Db.Ping(); err != nil {
-		fmt.Println("database/Init cant access:" + err.Error())
+		utils.PrintDebug("database/Init cant access:" + err.Error())
 		return
 	}
-	fmt.Println("database/Init open")
+	utils.PrintDebug("database/Init open")
 	if err = db.CreateTables(); err != nil {
 		return
 	}
@@ -49,7 +49,7 @@ func (db *DataBase) ServiceClear() (err error) {
 	tx, err = db.Db.Begin()
 	defer tx.Rollback()
 
-	//fmt.Println(user)
+	//utils.PrintDebug(user)
 	sqlRow := `
 	  TRUNCATE Post, Users, Thread, Forum, Vote;
 		`
@@ -61,7 +61,7 @@ func (db *DataBase) ServiceClear() (err error) {
 	if err != nil {
 		return
 	}
-	fmt.Println("database/ServiceClear +")
+	utils.PrintDebug("database/ServiceClear +")
 	return
 }
 
@@ -72,7 +72,7 @@ func (db *DataBase) CreateTables() error {
 	}
 	_, err = db.Db.Exec(string(query))
 	if err != nil {
-		fmt.Println("database/init - fail:" + err.Error())
+		utils.PrintDebug("database/init - fail:" + err.Error())
 	}
 	return err
 }

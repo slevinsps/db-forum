@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 	"db_forum/internal/models"
-	"fmt"
+	"db_forum/internal/utils"
 
 	_ "github.com/lib/pq"
 )
@@ -42,7 +42,7 @@ func (db *DataBase) UpdateVoteUser(nickname string, voice int, threadID int, out
 		return
 	}
 	defer tx.Rollback()
-	sqlQueryUpdate := `UPDATE Vote SET voice = $1 WHERE nickname like $2 and threadId = $3;`
+	sqlQueryUpdate := `UPDATE Vote SET voice = $1 WHERE nickname = $2 and threadId = $3;`
 	_, err = tx.Exec(sqlQueryUpdate, voice, nickname, threadID)
 	if err != nil {
 		outErr <- err
@@ -59,43 +59,22 @@ func (db *DataBase) InsertOrUpdateVoteUser(vote models.Vote, thread *models.Thre
 	defer tx.Rollback()
 
 	oldVoice := 0
-	sqlQuerySelect := `SELECT voice FROM Vote WHERE nickname like $1 and threadId = $2 `
-	row := tx.QueryRow(sqlQuerySelect, vote.Nickname, vote.ThreadId)
+
+	sqlQuerySelect := `INSERT INTO Vote(nickname, threadId, voice) VALUES ($1, $2, $3) ` +
+		`on conflict (nickname, threadId) do update set voice = $3 RETURNING voicePrevious;`
+	row := tx.QueryRow(sqlQuerySelect, vote.Nickname, vote.ThreadId, vote.Voice)
 	err = row.Scan(&oldVoice)
 	if err != nil && err != sql.ErrNoRows {
 		return
 	}
-
-	outErr := make(chan error, 1)
-	defer close(outErr)
-
-	if err == sql.ErrNoRows {
-		go db.InsertVoteUser(vote.Nickname, vote.Voice, vote.ThreadId, outErr)
-	} else {
-		go db.UpdateVoteUser(vote.Nickname, vote.Voice, vote.ThreadId, outErr)
-	}
-
-	sqlUpdate := `
-		UPDATE Thread SET votes = $1 WHERE id = $2;
-		`
-	_, err = tx.Exec(sqlUpdate, thread.Votes-oldVoice+vote.Voice, vote.ThreadId)
-	if err != nil {
-		return
-	}
-
-	thread.Votes = thread.Votes - oldVoice + vote.Voice
+	newVoice := vote.Voice
+	thread.Votes = thread.Votes - oldVoice + newVoice
 	err = tx.Commit()
 	if err != nil {
 		return
 	}
 
-	err = <-outErr
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	fmt.Println("database/InsertOrUpdateVoteUser +")
+	utils.PrintDebug("database/InsertOrUpdateVoteUser +")
 
 	return
 }
