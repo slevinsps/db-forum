@@ -9,6 +9,13 @@ DROP INDEX IF EXISTS idx_users;
 DROP INDEX IF EXISTS idx_forum;
 DROP INDEX IF EXISTS idx_thread;
 DROP INDEX IF EXISTS idx_post;
+DROP INDEX IF EXISTS idx_user_email;
+DROP INDEX IF EXISTS idx_thread_slug;
+DROP INDEX IF EXISTS idx_thread_forum;
+DROP INDEX IF EXISTS idx_post_author;
+DROP INDEX IF EXISTS idx_post_thread;
+DROP INDEX IF EXISTS idx_post_forum;
+DROP INDEX IF EXISTS idx_user_nickname_email;
 DROP INDEX IF EXISTS idx_vote;
 DROP INDEX IF EXISTS index_users_on_nickname;
 
@@ -20,6 +27,10 @@ CREATE TABLE IF NOT EXISTS Users (
   nickname CITEXT  NOT NULL PRIMARY KEY  COLLATE "C"
 );
 
+CREATE INDEX IF NOT EXISTS idx_user_nickname_email ON Users  (nickname, email);
+CREATE INDEX IF NOT EXISTS idx_user_email ON Users  (email);
+
+
 CREATE TABLE IF NOT EXISTS Forum (
   id      bigserial     PRIMARY KEY,
   posts   bigint        default 0,
@@ -28,6 +39,8 @@ CREATE TABLE IF NOT EXISTS Forum (
   title   varchar(100)  NOT NULL,
   "user"  CITEXT        NOT NULL REFERENCES Users(nickname) ON DELETE CASCADE   
 );
+
+
 
 
 CREATE TABLE IF NOT EXISTS Thread (
@@ -42,7 +55,9 @@ CREATE TABLE IF NOT EXISTS Thread (
 );
 
 
-CREATE INDEX IF NOT EXISTS idx_thread ON Thread  (slug );
+CREATE INDEX IF NOT EXISTS idx_thread_slug ON Thread  (slug );
+CREATE INDEX IF NOT EXISTS idx_thread_forum ON Thread  (forum );
+
 
 CREATE TABLE IF NOT EXISTS Post (
   path      text                        NOT NULL,
@@ -57,9 +72,19 @@ CREATE TABLE IF NOT EXISTS Post (
   branch    BIGINT                      NOT NULL DEFAULT 0
 );
 
-CREATE INDEX IF NOT EXISTS idx_post ON Post 
+CREATE INDEX IF NOT EXISTS idx_post_author ON Post 
 (
   author
+);
+
+CREATE INDEX IF NOT EXISTS idx_post_thread ON Post 
+(
+  thread
+);
+
+CREATE INDEX IF NOT EXISTS idx_post_forum ON Post 
+(
+  forum
 );
 
 CREATE TABLE IF NOT EXISTS Vote (
