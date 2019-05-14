@@ -13,10 +13,10 @@ func (db DataBase) isThreadUnique(thread models.Thread) (threadRes models.Thread
 	defer tx.Rollback()
 	checkUnique = false
 
-	sqlStatement := "SELECT t.author, t.created, t.forum, t.id, t.message, t.title, t.slug " +
+	sqlStatement := "SELECT t.author, t.created, t.forum, t.id, t.message, t.title, t.slug, t.votes " +
 		"FROM Thread as t where  t.slug = $1"
 	row := tx.QueryRow(sqlStatement, thread.Slug)
-	err = row.Scan(&threadRes.Author, &threadRes.Created, &threadRes.Forum, &threadRes.Id, &threadRes.Message, &threadRes.Title, &threadRes.Slug)
+	err = row.Scan(&threadRes.Author, &threadRes.Created, &threadRes.Forum, &threadRes.Id, &threadRes.Message, &threadRes.Title, &threadRes.Slug, &threadRes.Votes)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -89,7 +89,7 @@ func (db *DataBase) GetThreadsByForum(title string, limitStr string, sinceStr st
 	defer tx.Rollback()
 
 	sqlQuery :=
-		"SELECT t.author, t.created, t.forum, t.id, t.message, t.slug, t.title " +
+		"SELECT t.author, t.created, t.forum, t.id, t.message, t.slug, t.title, t.votes " +
 			"FROM Thread as t where t.forum = $1 "
 	if sinceStr != "" {
 		if descStr == "true" {
@@ -117,7 +117,7 @@ func (db *DataBase) GetThreadsByForum(title string, limitStr string, sinceStr st
 
 	for rows.Next() {
 		thread := models.Thread{}
-		if err = rows.Scan(&thread.Author, &thread.Created, &thread.Forum, &thread.Id, &thread.Message, &thread.Slug, &thread.Title); err != nil {
+		if err = rows.Scan(&thread.Author, &thread.Created, &thread.Forum, &thread.Id, &thread.Message, &thread.Slug, &thread.Title, &thread.Votes); err != nil {
 			utils.PrintDebug("database/GetThreadsByForum wrong row catched")
 			break
 		}
@@ -185,7 +185,7 @@ func (db *DataBase) UpdateThread(threadNew models.Thread, threadOld models.Threa
 
 	//utils.PrintDebug(user)
 	sqlInsert := `
-		UPDATE Thread SET message = $1, title = $2 where id = $3 RETURNING author, created, forum, id, message, title, slug;
+		UPDATE Thread SET message = $1, title = $2 where id = $3 RETURNING author, created, forum, id, message, title, slug, votes;
 		`
 	if threadNew.Message == "" {
 		threadNew.Message = threadOld.Message
@@ -194,7 +194,7 @@ func (db *DataBase) UpdateThread(threadNew models.Thread, threadOld models.Threa
 		threadNew.Title = threadOld.Title
 	}
 	row := tx.QueryRow(sqlInsert, threadNew.Message, threadNew.Title, threadOld.Id)
-	err = row.Scan(&threadRes.Author, &threadRes.Created, &threadRes.Forum, &threadRes.Id, &threadRes.Message, &threadRes.Title, &threadRes.Slug)
+	err = row.Scan(&threadRes.Author, &threadRes.Created, &threadRes.Forum, &threadRes.Id, &threadRes.Message, &threadRes.Title, &threadRes.Slug, &threadRes.Votes)
 	if err != nil {
 		return
 	}

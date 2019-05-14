@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS Thread (
 );
 
 
-CREATE INDEX idx_thread ON Thread  (slug );
+CREATE INDEX IF NOT EXISTS idx_thread ON Thread  (slug );
 
 CREATE TABLE IF NOT EXISTS Post (
   path      text                        NOT NULL,
