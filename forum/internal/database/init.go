@@ -51,7 +51,7 @@ func (db *DataBase) ServiceClear() (err error) {
 
 	//utils.PrintDebug(user)
 	sqlRow := `
-	  TRUNCATE Post, Users, Thread, Forum, Vote;
+	  TRUNCATE Post, Users, Thread, Forum, Vote, UsersForum;
 		`
 	_, err = tx.Exec(sqlRow)
 	if err != nil {

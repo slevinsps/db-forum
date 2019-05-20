@@ -2,7 +2,6 @@ package api
 
 import (
 	"db_forum/internal/utils"
-	"encoding/json"
 	"net/http"
 )
 
@@ -14,6 +13,10 @@ func printResult(catched error, number int, place string) {
 	}
 }
 
-func sendJSON(rw http.ResponseWriter, result interface{}, place string) {
-	json.NewEncoder(rw).Encode(result)
+func sendJSON(rw http.ResponseWriter, result []byte, place string) {
+	// bytes,_ := 	result.MarshalJSON()
+	rw.Write(result)
+	//json.NewEncoder(rw).Encode(result)
 }
+
+

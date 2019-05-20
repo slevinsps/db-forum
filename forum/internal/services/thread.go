@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"db_forum/internal/models"
 	"db_forum/internal/utils"
 	"net/http"
@@ -43,7 +44,8 @@ func (h *Handler) ThreadCreate(rw http.ResponseWriter, r *http.Request) {
 	if !checkFindForum {
 		rw.WriteHeader(http.StatusNotFound)
 		message := models.Message{Message: "Can't find forum by slag: " + slug}
-		sendJSON(rw, message, place)
+		resBytes, _ := message.MarshalJSON()
+		sendJSON(rw, resBytes, place)
 		return
 	}
 
@@ -52,17 +54,20 @@ func (h *Handler) ThreadCreate(rw http.ResponseWriter, r *http.Request) {
 	if thread, checkUnique, err = h.DB.CreateThread(thread); err != nil {
 		rw.WriteHeader(http.StatusNotFound)
 		message := models.Message{Message: "Can't find user"}
-		sendJSON(rw, message, place)
+		resBytes, _ := message.MarshalJSON()
+		sendJSON(rw, resBytes, place)
 		printResult(err, http.StatusNotFound, place)
 		return
 	}
 
 	if checkUnique {
 		rw.WriteHeader(http.StatusCreated)
-		sendJSON(rw, thread, place)
+		resBytes, _ := thread.MarshalJSON()
+		sendJSON(rw, resBytes, place)
 	} else {
 		rw.WriteHeader(http.StatusConflict)
-		sendJSON(rw, thread, place)
+		resBytes, _ := thread.MarshalJSON()
+		sendJSON(rw, resBytes, place)
 	}
 
 	utils.PrintDebug("ThreadCreate---------------------------end")
@@ -127,12 +132,15 @@ func (h *Handler) ForumThreads(rw http.ResponseWriter, r *http.Request) {
 		if len(threads) == 0 {
 			rw.Write([]byte("[]"))
 		} else {
-			sendJSON(rw, threads, place)
+
+			resBytes, _ := json.Marshal(threads)
+			sendJSON(rw, resBytes, place)
 		}
 	} else {
 		rw.WriteHeader(http.StatusNotFound)
 		message := models.Message{Message: "Can't find forum by sluq: " + slug}
-		sendJSON(rw, message, place)
+		resBytes, _ := message.MarshalJSON()
+		sendJSON(rw, resBytes, place)
 	}
 
 	printResult(err, http.StatusCreated, place)
@@ -166,11 +174,13 @@ func (h *Handler) ThreadDetails(rw http.ResponseWriter, r *http.Request) {
 	if !checkFindThread {
 		rw.WriteHeader(http.StatusNotFound)
 		message := models.Message{Message: "Can't find thread by id: " + slugOrID}
-		sendJSON(rw, message, place)
+		resBytes, _ := message.MarshalJSON()
+		sendJSON(rw, resBytes, place)
 		return
 	} else {
 		rw.WriteHeader(http.StatusOK)
-		sendJSON(rw, thread, place)
+		resBytes, _ := thread.MarshalJSON()
+		sendJSON(rw, resBytes, place)
 	}
 
 	printResult(err, http.StatusCreated, place)
@@ -211,7 +221,10 @@ func (h *Handler) ThreadUpdate(rw http.ResponseWriter, r *http.Request) {
 	if !checkFindThread {
 		rw.WriteHeader(http.StatusNotFound)
 		message := models.Message{Message: "Can't find thread by id: " + slugOrID}
-		sendJSON(rw, message, place)
+	
+		resBytes, _ := message.MarshalJSON()
+		sendJSON(rw, resBytes, place)
+		
 		return
 	}
 
@@ -221,8 +234,8 @@ func (h *Handler) ThreadUpdate(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rw.WriteHeader(http.StatusOK)
-	sendJSON(rw, threadOld, place)
-
+	resBytes, _ := threadOld.MarshalJSON()
+	sendJSON(rw, resBytes, place)
 	printResult(err, http.StatusCreated, place)
 	return
 }

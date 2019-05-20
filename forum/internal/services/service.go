@@ -40,7 +40,8 @@ func (h *Handler) ServiceStatus(rw http.ResponseWriter, r *http.Request) {
 
 	rw.Header().Set("Content-Type", "application/json")
 	rw.WriteHeader(http.StatusOK)
-	sendJSON(rw, models.Service{Forum: countForum, Post: countPost, User: countUser, Thread: countThread}, place)
+	resBytes, _ := models.Service{Forum: countForum, Post: countPost, User: countUser, Thread: countThread}.MarshalJSON()
+	sendJSON(rw, resBytes, place)
 	printResult(err, http.StatusCreated, place)
 	return
 }

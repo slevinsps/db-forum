@@ -37,7 +37,8 @@ func (h *Handler) ThreadVote(rw http.ResponseWriter, r *http.Request) {
 	if !checkFindThread {
 		rw.WriteHeader(http.StatusNotFound)
 		message := models.Message{Message: "Can't find thread by id: " + slugOrID}
-		sendJSON(rw, message, place)
+		resBytes, _ := message.MarshalJSON()
+		sendJSON(rw, resBytes, place)
 		return
 	}
 
@@ -45,12 +46,15 @@ func (h *Handler) ThreadVote(rw http.ResponseWriter, r *http.Request) {
 	if err = h.DB.InsertOrUpdateVoteUser(vote, &thread); err != nil {
 		rw.WriteHeader(http.StatusNotFound)
 		message := models.Message{Message: "Can't find user"}
-		sendJSON(rw, message, place)
+
+		resBytes, _ := message.MarshalJSON()
+		sendJSON(rw, resBytes, place)
 		printResult(err, http.StatusNotFound, place)
 		return
 	}
 	rw.WriteHeader(http.StatusOK)
-	sendJSON(rw, thread, place)
+	resBytes, _ := thread.MarshalJSON()
+	sendJSON(rw, resBytes, place)
 
 	printResult(err, http.StatusCreated, place)
 	return

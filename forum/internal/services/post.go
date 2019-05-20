@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"db_forum/internal/models"
 	"db_forum/internal/utils"
 	"net/http"
@@ -43,7 +44,8 @@ func (h *Handler) ThreadCreatePost(rw http.ResponseWriter, r *http.Request) {
 	if !checkFindThread {
 		rw.WriteHeader(http.StatusNotFound)
 		message := models.Message{Message: "Can't find thread by id: " + slugOrID}
-		sendJSON(rw, message, place)
+		resBytes, _ := message.MarshalJSON()
+		sendJSON(rw, resBytes, place)
 		return
 	}
 
@@ -58,25 +60,37 @@ func (h *Handler) ThreadCreatePost(rw http.ResponseWriter, r *http.Request) {
 	if posts, check, err = h.DB.CreatePost(posts, thread, timeNow); err != nil {
 		rw.WriteHeader(http.StatusNotFound)
 		message := models.Message{Message: "Can't find post author"}
-		sendJSON(rw, message, place)
+		resBytes, _ := message.MarshalJSON()
+		sendJSON(rw, resBytes, place)
 		printResult(err, http.StatusNotFound, place)
 		return
 	}
 	if check == -1 {
 		rw.WriteHeader(http.StatusConflict)
 		message := models.Message{Message: "Parent post was created in another thread"}
-		sendJSON(rw, message, place)
+	
+		resBytes, _ := message.MarshalJSON()
+		sendJSON(rw, resBytes, place)
+		
 		return
 	} else if check == -2 {
 		rw.WriteHeader(http.StatusNotFound)
 		message := models.Message{Message: "Can't find post author"}
-		sendJSON(rw, message, place)
+		resBytes, _ := message.MarshalJSON()
+		sendJSON(rw, resBytes, place)
 		return
 	}
 
 	_ = h.DB.UpdateFieldsForum(thread.Forum, len(posts), "posts")
 	rw.WriteHeader(http.StatusCreated)
-	sendJSON(rw, posts, place)
+
+	// var resBytes []byte
+	// for _, value := range(posts) {
+	// 	resBytes, _ = value.MarshalJSON()
+	// }
+	resBytes, _ := json.Marshal(posts)
+	sendJSON(rw, resBytes, place)
+	
 	printResult(err, http.StatusCreated, place)
 
 	return
@@ -109,7 +123,8 @@ func (h *Handler) ThreadPosts(rw http.ResponseWriter, r *http.Request) {
 	if !checkFindThread {
 		rw.WriteHeader(http.StatusNotFound)
 		message := models.Message{Message: "Can't find thread by id: " + slugOrID}
-		sendJSON(rw, message, place)
+		resBytes, _ := message.MarshalJSON()
+		sendJSON(rw, resBytes, place)
 		return
 	}
 
@@ -123,7 +138,9 @@ func (h *Handler) ThreadPosts(rw http.ResponseWriter, r *http.Request) {
 	if len(posts) == 0 {
 		rw.Write([]byte("[]"))
 	} else {
-		sendJSON(rw, posts, place)
+
+		resBytes, _ := json.Marshal(posts)
+		sendJSON(rw, resBytes, place)
 	}
 
 	printResult(err, http.StatusCreated, place)
@@ -166,7 +183,8 @@ func (h *Handler) PostDetails(rw http.ResponseWriter, r *http.Request) {
 	if !checkFindPost {
 		rw.WriteHeader(http.StatusNotFound)
 		message := models.Message{Message: "Can't find post by id: " + strconv.Itoa(id)}
-		sendJSON(rw, message, place)
+		resBytes, _ := message.MarshalJSON()
+		sendJSON(rw, resBytes, place)
 		return
 	} else {
 
@@ -201,7 +219,8 @@ func (h *Handler) PostDetails(rw http.ResponseWriter, r *http.Request) {
 
 	}
 	rw.WriteHeader(http.StatusOK)
-	sendJSON(rw, details, place)
+	resBytes, _ := details.MarshalJSON()
+	sendJSON(rw, resBytes, place)
 
 	printResult(err, http.StatusCreated, place)
 	return
@@ -247,13 +266,16 @@ func (h *Handler) PostUpdate(rw http.ResponseWriter, r *http.Request) {
 	if !checkFindPost {
 		rw.WriteHeader(http.StatusNotFound)
 		message := models.Message{Message: "Can't find post by id: " + strconv.Itoa(id)}
-		sendJSON(rw, message, place)
+
+		resBytes, _ := message.MarshalJSON()
+		sendJSON(rw, resBytes, place)
 		return
 	}
 
 	if message.Message == "" {
 		rw.WriteHeader(http.StatusOK)
-		sendJSON(rw, post, place)
+		resBytes, _ := post.MarshalJSON()
+		sendJSON(rw, resBytes, place)
 		printResult(err, http.StatusCreated, place)
 		return
 	}
@@ -263,7 +285,8 @@ func (h *Handler) PostUpdate(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rw.WriteHeader(http.StatusOK)
-	sendJSON(rw, post, place)
+	resBytes, _ := post.MarshalJSON()
+	sendJSON(rw, resBytes, place)
 
 	printResult(err, http.StatusCreated, place)
 	return

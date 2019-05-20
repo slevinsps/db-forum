@@ -10,6 +10,7 @@ require (
 	github.com/aryann/difflib v0.0.0-20170710044230-e206f873d14a // indirect
 	github.com/bozaro/golorem v0.0.0-20170501165920-50e5b610280b // indirect
 	github.com/bozaro/tech-db-forum v0.2.2 // indirect
+	github.com/ernesto-jimenez/httplogger v0.0.0-20150224132909-86cc44f6150a // indirect
 	github.com/go-openapi/errors v0.18.0 // indirect
 	github.com/go-openapi/runtime v0.18.0 // indirect
 	github.com/go-openapi/strfmt v0.18.0 // indirect
@@ -17,6 +18,7 @@ require (
 	github.com/gorilla/mux v1.7.0
 	github.com/labstack/gommon v0.2.8 // indirect
 	github.com/lib/pq v1.0.0
+	github.com/mailru/easyjson v0.0.0-20190403194419-1ea4449da983
 	github.com/mattn/go-colorable v0.1.1 // indirect
 	github.com/mkideal/cli v0.0.2 // indirect
 	github.com/mkideal/pkg v0.0.0-20170503154153-3e188c9e7ecc // indirect

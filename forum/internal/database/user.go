@@ -187,30 +187,16 @@ func (db *DataBase) GetUserByNickname(nickname string) (user models.User, checkF
 
 // GetUsersByForum
 func (db *DataBase) GetUsersByForum(title string, limitStr string, sinceStr string, descStr string) (users []models.User, err error) {
-	var tx *sql.Tx
-	tx, err = db.Db.Begin()
-	defer tx.Rollback()
 
 	sqlQuery :=
 		"SELECT distinct u.about, u.email, u.fullname, u.nickname " +
-			"FROM Users as u join Post as p on p.author = u.nickname where p.forum = $1  "
+			"FROM Users as u join UsersForum as f on f.userNickname = u.nickname and f.forum = $1  "
 
 	if sinceStr != "" {
 		if descStr == "true" {
 			sqlQuery += "and u.nickname < " + "'" + sinceStr + "'"
 		} else {
-			sqlQuery += "and u.nickname > " + "'" + sinceStr + "'"
-		}
-	}
-
-	sqlQuery += " union SELECT distinct u.about, u.email, u.fullname, u.nickname " +
-		"FROM Users as u join Thread as t on t.author = u.nickname where t.forum = $1 "
-
-	if sinceStr != "" {
-		if descStr == "true" {
-			sqlQuery += "and u.nickname < " + "'" + sinceStr + "'"
-		} else {
-			sqlQuery += "and u.nickname > " + "'" + sinceStr + "'"
+			sqlQuery += "and " + "'" + sinceStr + "' < u.nickname "
 		}
 	}
 
@@ -224,7 +210,7 @@ func (db *DataBase) GetUsersByForum(title string, limitStr string, sinceStr stri
 
 	utils.PrintDebug(sqlQuery)
 
-	rows, erro := tx.Query(sqlQuery, title)
+	rows, erro := db.Db.Query(sqlQuery, title)
 	if erro != nil {
 		err = erro
 		utils.PrintDebug("database/GetUsersByForum Query error")
@@ -242,12 +228,6 @@ func (db *DataBase) GetUsersByForum(title string, limitStr string, sinceStr stri
 
 		users = append(users, user)
 	}
-
-	err = tx.Commit()
-	if err != nil {
-		return
-	}
-
 	utils.PrintDebug("database/GetUsersByForum +")
 
 	return

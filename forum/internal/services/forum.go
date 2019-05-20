@@ -40,7 +40,8 @@ func (h *Handler) ForumCreate(rw http.ResponseWriter, r *http.Request) {
 	if !checkFindUser {
 		rw.WriteHeader(http.StatusNotFound)
 		message := models.Message{Message: "Can't find user by nickname: " + forum.User}
-		sendJSON(rw, message, place)
+		resBytes, _ := message.MarshalJSON()
+		sendJSON(rw, resBytes, place)
 		return
 	}
 
@@ -53,10 +54,12 @@ func (h *Handler) ForumCreate(rw http.ResponseWriter, r *http.Request) {
 
 	if checkUnique {
 		rw.WriteHeader(http.StatusCreated)
-		sendJSON(rw, forum, place)
+		resBytes, _ := forum.MarshalJSON()
+		sendJSON(rw, resBytes, place)
 	} else {
 		rw.WriteHeader(http.StatusConflict)
-		sendJSON(rw, forum, place)
+		resBytes, _ := forum.MarshalJSON()
+		sendJSON(rw, resBytes, place)
 	}
 
 	printResult(err, http.StatusCreated, place)
@@ -90,11 +93,13 @@ func (h *Handler) ForumDetails(rw http.ResponseWriter, r *http.Request) {
 
 	if checkFindForum {
 		rw.WriteHeader(http.StatusOK)
-		sendJSON(rw, forum, place)
+		resBytes, _ := forum.MarshalJSON()
+		sendJSON(rw, resBytes, place)
 	} else {
 		rw.WriteHeader(http.StatusNotFound)
 		message := models.Message{Message: "Can't find forum by sluq: " + slug}
-		sendJSON(rw, message, place)
+		resBytes, _ := message.MarshalJSON()
+		sendJSON(rw, resBytes, place)
 	}
 
 	printResult(err, http.StatusCreated, place)

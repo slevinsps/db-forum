@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"db_forum/internal/models"
 	"net/http"
 )
@@ -39,10 +40,15 @@ func (h *Handler) UserCreate(rw http.ResponseWriter, r *http.Request) {
 
 	if checkUnique {
 		rw.WriteHeader(http.StatusCreated)
-		sendJSON(rw, users[0], place)
+		resBytes, _ := users[0].MarshalJSON()
+		sendJSON(rw, resBytes, place)
+		
 	} else {
 		rw.WriteHeader(http.StatusConflict)
-		sendJSON(rw, users, place)
+
+		resBytes, _ := json.Marshal(users)
+		sendJSON(rw, resBytes, place)
+		
 	}
 
 	printResult(err, http.StatusCreated, place)
@@ -75,11 +81,14 @@ func (h *Handler) UserProfile(rw http.ResponseWriter, r *http.Request) {
 
 	if checkFindUser {
 		rw.WriteHeader(http.StatusOK)
-		sendJSON(rw, user, place)
+		resBytes, _ := user.MarshalJSON()
+		sendJSON(rw, resBytes, place)
 	} else {
 		rw.WriteHeader(http.StatusNotFound)
 		message := models.Message{Message: "Can't find user by nickname: " + nickname}
-		sendJSON(rw, message, place)
+
+		resBytes, _ := message.MarshalJSON()
+		sendJSON(rw, resBytes, place)
 	}
 
 	printResult(err, http.StatusCreated, place)
@@ -124,7 +133,9 @@ func (h *Handler) UserUpdateProfile(rw http.ResponseWriter, r *http.Request) {
 	if !checkFindUser {
 		rw.WriteHeader(http.StatusNotFound)
 		message := models.Message{Message: "Can't find user by nickname: " + nickname}
-		sendJSON(rw, message, place)
+
+		resBytes, _ := message.MarshalJSON()
+		sendJSON(rw, resBytes, place)
 		return
 	}
 
@@ -150,11 +161,14 @@ func (h *Handler) UserUpdateProfile(rw http.ResponseWriter, r *http.Request) {
 
 	if checkUnique {
 		rw.WriteHeader(http.StatusOK)
-		sendJSON(rw, user, place)
+		resBytes, _ := user.MarshalJSON()
+		sendJSON(rw, resBytes, place)
 	} else {
 		rw.WriteHeader(http.StatusConflict)
 		message := models.Message{Message: "Can't find user by nickname: " + nickname}
-		sendJSON(rw, message, place)
+
+		resBytes, _ := message.MarshalJSON()
+		sendJSON(rw, resBytes, place)
 	}
 
 	printResult(err, http.StatusCreated, place)
@@ -178,6 +192,7 @@ func (h *Handler) ForumUsers(rw http.ResponseWriter, r *http.Request) {
 		printResult(err, http.StatusBadRequest, place)
 		return
 	}
+	rw.Header().Set("Content-Type", "application/json")
 
 	if forum, checkFindForum, err = h.DB.GetForumBySlug(slug); err != nil {
 		rw.WriteHeader(http.StatusNotFound)
@@ -185,12 +200,12 @@ func (h *Handler) ForumUsers(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rw.Header().Set("Content-Type", "application/json")
-
 	if !checkFindForum {
 		rw.WriteHeader(http.StatusNotFound)
 		message := models.Message{Message: "Can't find forum by sluq: " + slug}
-		sendJSON(rw, message, place)
+
+		resBytes, _ := message.MarshalJSON()
+		sendJSON(rw, resBytes, place)
 		return
 	}
 
@@ -203,7 +218,9 @@ func (h *Handler) ForumUsers(rw http.ResponseWriter, r *http.Request) {
 	if len(users) == 0 {
 		rw.Write([]byte("[]"))
 	} else {
-		sendJSON(rw, users, place)
+
+		resBytes, _ := json.Marshal(users)
+		sendJSON(rw, resBytes, place)
 	}
 
 	printResult(err, http.StatusCreated, place)

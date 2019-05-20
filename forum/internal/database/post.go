@@ -83,6 +83,7 @@ func (db *DataBase) CreatePost(posts []models.Post, thread models.Thread, timeNo
 			check = -2
 			return
 		}
+
 		postQuery = append(postQuery, postQuerySingle)
 	}
 
@@ -91,6 +92,12 @@ func (db *DataBase) CreatePost(posts []models.Post, thread models.Thread, timeNo
 		check = -2
 		return
 	}
+
+	sqlInsertUserForum := ` INSERT INTO UsersForum(userNickname, forum) VALUES ($1, $2) ON CONFLICT (userNickname, forum) DO NOTHING;`
+	for _, value := range postQuery {
+		db.Db.Exec(sqlInsertUserForum, value.Author, value.Forum)
+	}
+
 	utils.PrintDebug("database/CreatePost +")
 
 	return

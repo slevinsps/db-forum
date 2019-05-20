@@ -12,3 +12,7 @@ type Post struct {
 	Path     string `json:"path,omitempty"`
 	Branch   string `json:"branch,omitempty"`
 }
+
+type PostArray struct {
+    posts []Post `json:"posts,omitempty"`
+}
