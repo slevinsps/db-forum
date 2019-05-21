@@ -13,7 +13,7 @@ RUN wget https://dl.google.com/go/go1.11.2.linux-amd64.tar.gz
 RUN tar -xvf go1.11.2.linux-amd64.tar.gz
 RUN mv go /usr/local
 
-ENV GOROOT /usr/local/go
+ENV GOROOT /usr/local/go 
 ENV GOPATH /opt/go
 ENV PATH $GOROOT/bin:$GOPATH/bin:/usr/local/go/bin:$PATH
 

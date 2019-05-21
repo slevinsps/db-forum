@@ -214,11 +214,11 @@ func (h *Handler) ForumUsers(rw http.ResponseWriter, r *http.Request) {
 		printResult(err, http.StatusNotFound, place)
 		return
 	}
+
 	rw.WriteHeader(http.StatusOK)
 	if len(users) == 0 {
 		rw.Write([]byte("[]"))
 	} else {
-
 		resBytes, _ := json.Marshal(users)
 		sendJSON(rw, resBytes, place)
 	}

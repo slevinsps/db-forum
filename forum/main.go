@@ -18,8 +18,8 @@ var maxString = ""
 
 func logHandler(fn http.HandlerFunc) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
-		// fn(w, r)
-		// return
+		fn(w, r)
+		return
         x, err := httputil.DumpRequest(r, true)
         if err != nil {
             http.Error(w, fmt.Sprint(err), http.StatusInternalServerError)

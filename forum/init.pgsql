@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS Post (
   branch    BIGINT                      NOT NULL DEFAULT 0
 );
 
-CREATE INDEX IF NOT EXISTS idx_post_author ON Post USING btree (author);
+CREATE INDEX IF NOT EXISTS idx_post_author ON Post USING btree (author COLLATE "C");
 CREATE INDEX IF NOT EXISTS idx_post_thread ON Post USING btree (thread);
 CREATE INDEX IF NOT EXISTS idx_post_forum ON Post USING btree (forum);
 CREATE INDEX IF NOT EXISTS idx_post_branch ON Post USING btree (branch);
@@ -97,6 +97,11 @@ CREATE TABLE IF NOT EXISTS UsersForum (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_usersForum ON UsersForum USING btree (userNickname, forum);
+drop index if exists idx_usersForum_forum;
+CREATE  INDEX IF NOT EXISTS idx_usersForum_forum ON UsersForum USING btree (forum);
+
+drop index if exists idx_usersForum_name;
+CREATE  INDEX IF NOT EXISTS idx_usersForum_name ON UsersForum USING btree (userNickname COLLATE "C");
 
 
 CREATE OR REPLACE FUNCTION insertPost()

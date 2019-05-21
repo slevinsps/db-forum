@@ -189,7 +189,7 @@ func (db *DataBase) GetUserByNickname(nickname string) (user models.User, checkF
 func (db *DataBase) GetUsersByForum(title string, limitStr string, sinceStr string, descStr string) (users []models.User, err error) {
 
 	sqlQuery :=
-		"SELECT distinct u.about, u.email, u.fullname, u.nickname " +
+		"SELECT u.about, u.email, u.fullname, u.nickname " +
 			"FROM Users as u join UsersForum as f on f.userNickname = u.nickname and f.forum = $1  "
 
 	if sinceStr != "" {
@@ -211,6 +211,7 @@ func (db *DataBase) GetUsersByForum(title string, limitStr string, sinceStr stri
 	utils.PrintDebug(sqlQuery)
 
 	rows, erro := db.Db.Query(sqlQuery, title)
+
 	if erro != nil {
 		err = erro
 		utils.PrintDebug("database/GetUsersByForum Query error")
