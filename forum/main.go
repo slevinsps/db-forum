@@ -29,7 +29,7 @@ func logHandler(fn http.HandlerFunc) http.HandlerFunc {
 		fn(w, r)
 		end := time.Now()
 		elapsed := end.Sub(start)
-		if elapsed > maxElapsed {
+		if elapsed > time.Second /10 {
 			maxElapsed = elapsed
 			maxString = fmt.Sprintf("%q  --- duration = %s", x, elapsed.String())
 			fmt.Println(maxString)

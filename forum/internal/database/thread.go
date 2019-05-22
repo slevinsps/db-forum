@@ -134,27 +134,35 @@ func (db *DataBase) GetThreadsByForum(title string, limitStr string, sinceStr st
 	return
 }
 
+//var maxElapsed time.Duration = -1
+
 // GetThreadsById
 func (db *DataBase) GetThreadById(slugOrId string) (thread models.Thread, checkFindThread bool, err error) {
-	var tx *sql.Tx
-	tx, err = db.Db.Begin()
-	defer tx.Rollback()
+
 	checkFindThread = true
+
 	slugOrIDInt, errAtoi := strconv.Atoi(slugOrId)
+	//start := time.Now()
 	if errAtoi != nil {
 
 		sqlQuery :=
 			"SELECT t.author, t.created, t.forum, t.id, t.message, t.slug, t.title, t.votes " +
 				"FROM Thread as t where t.slug = $1;"
-		row := tx.QueryRow(sqlQuery, slugOrId)
+		row := db.Db.QueryRow(sqlQuery, slugOrId)
 		err = row.Scan(&thread.Author, &thread.Created, &thread.Forum, &thread.Id, &thread.Message, &thread.Slug, &thread.Title, &thread.Votes)
 	} else {
 		sqlQuery :=
 			"SELECT t.author, t.created, t.forum, t.id, t.message, t.slug, t.title, t.votes " +
 				"FROM Thread as t where t.id = $1;"
-		row := tx.QueryRow(sqlQuery, slugOrIDInt)
+		row := db.Db.QueryRow(sqlQuery, slugOrIDInt)
 		err = row.Scan(&thread.Author, &thread.Created, &thread.Forum, &thread.Id, &thread.Message, &thread.Slug, &thread.Title, &thread.Votes)
 	}
+	/*end := time.Now()
+	elapsed := end.Sub(start)
+	if maxElapsed < elapsed {
+		maxElapsed = elapsed
+		fmt.Println("strconv.Atoi(slugOrId) duration (", slugOrId, ") ", elapsed.String())
+	}*/
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -162,12 +170,6 @@ func (db *DataBase) GetThreadById(slugOrId string) (thread models.Thread, checkF
 			err = nil
 		}
 		utils.PrintDebug("database/GetThreadsById Scan error")
-		return
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		utils.PrintDebug("database/GetThreadsById Commit error")
 		return
 	}
 

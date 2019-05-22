@@ -24,6 +24,7 @@ DROP INDEX IF EXISTS idx_post_branch_thread_and_parent;
 DROP INDEX IF EXISTS index_users_on_nickname;
 DROP INDEX IF EXISTS idx_post_thread_parent;
 DROP INDEX IF EXISTS idx_usersForum;
+DROP INDEX IF EXISTS idx_thread_created;
 
 
 CREATE TABLE IF NOT EXISTS Users (
@@ -57,6 +58,7 @@ CREATE TABLE IF NOT EXISTS Thread (
   votes     int  DEFAULT 0      NOT NULL 
 );
 
+CREATE INDEX IF NOT EXISTS idx_thread_created ON Thread  USING btree (created);
 CREATE INDEX IF NOT EXISTS idx_thread_author ON Thread  USING btree (author);
 CREATE INDEX IF NOT EXISTS idx_thread_slug ON Thread  USING btree (slug);
 CREATE INDEX IF NOT EXISTS idx_thread_forum ON Thread  USING btree (forum );
@@ -80,6 +82,8 @@ CREATE INDEX IF NOT EXISTS idx_post_thread ON Post USING btree (thread);
 CREATE INDEX IF NOT EXISTS idx_post_forum ON Post USING btree (forum);
 CREATE INDEX IF NOT EXISTS idx_post_branch ON Post USING btree (branch);
 CREATE INDEX IF NOT EXISTS idx_post_thread_parent ON Post USING btree (thread, parent);
+drop index if exists idx_post_path;
+CREATE INDEX IF NOT EXISTS idx_post_path ON Post USING btree (path);
 
 CREATE TABLE IF NOT EXISTS Vote (
   nickname  CITEXT   NOT NULL  REFERENCES Users(nickname)  ON DELETE CASCADE,
